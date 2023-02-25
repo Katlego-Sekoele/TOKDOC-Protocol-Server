@@ -1,17 +1,7 @@
 # authenticating user logging in details and signing up users
 # making use of Database and dictionaries
 
-import mysql.connector
-import hashlib
-
-db = mysql.connector.connect(
-    host="",
-    user="",
-    password="",
-    database=""
-)
-
-cursor = db.cursor()
+import database_manager as database
 
 
 # register new
@@ -20,8 +10,8 @@ def register_user(email, password):
 
     # sql command
     command = "INSERT INTO users (email, password) VALUES (%s, %s)"
-    cred = (email, password)
-    cursor.execute(command, cred)
+    creds = (email, password)
+    database.query(command, creds)
     done = True
 
     return done
@@ -35,9 +25,9 @@ def check_user(email, password):
     command = "SELECT email FROM users WHERE email = %s AND password = %s"
 
     creds = (email, password)
-    cursor.execute(command, creds)
+    result = database.query(command, creds)
 
-    valid = cursor.fetchone()
+    valid = result
 
     if valid is not None:
         found = True
