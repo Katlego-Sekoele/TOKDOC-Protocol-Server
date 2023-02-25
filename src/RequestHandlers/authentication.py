@@ -1,7 +1,7 @@
 # authenticating user logging in details and signing up users
 # making use of Database and dictionaries
 
-import database_manager as database
+from src.Utilities import database_manager as database
 
 
 # register new

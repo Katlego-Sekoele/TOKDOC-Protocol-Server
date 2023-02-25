@@ -1,6 +1,6 @@
 # sending a file to the client
 
-import database_manager as database
+from src.Utilities import database_manager as database
 
 
 # checks if file name entered is valid

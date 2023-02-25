@@ -70,7 +70,7 @@ def encoded_data_test():
 
 
 def test_message():
-    file_size = os.path.getsize('test_data/test.png')
+    file_size = os.path.getsize('../test_data/test.png')
 
     message = (START +
                CRLF + CRLF +
@@ -112,7 +112,7 @@ def test_message():
 
 
 def test_file():
-    file = open('test_data/test.png', 'rb')
+    file = open('../test_data/test.png', 'rb')
     file_bytes = file.read()
     file.close()
 

@@ -1,6 +1,6 @@
 # handle upload request
 from datetime import *
-import database_manager as database
+from src.Utilities import database_manager as database
 
 
 def save_in_db(type, filename, id):

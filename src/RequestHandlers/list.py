@@ -1,6 +1,6 @@
 # listing all the available files
 
-import database_manager as database
+from src.Utilities import database_manager as database
 
 
 def return_list():
