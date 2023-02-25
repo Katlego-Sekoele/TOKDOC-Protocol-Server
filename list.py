@@ -15,6 +15,7 @@ cursor = db.cursor()
 
 
 def return_list():
+    # name of the database has been changed to resources !
     query = "SELECT filepath, upload_date, type, access FROM Files WHERE email = %s AND password = %s"
 
     cursor.execute(query)
