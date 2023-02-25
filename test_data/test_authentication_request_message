@@ -1,0 +1,9 @@
+5a32034ef2da2b10585068273adef5fd602b631b62b8527bb73d7669f2490aae
+77
+{START}
+
+{{START METHOD}}
+AUTH test@test.com test
+{{END METHOD}}
+
+{END}
