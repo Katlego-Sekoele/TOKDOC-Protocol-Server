@@ -57,8 +57,3 @@ def query(query_template, query_values=None):
 
 def disconnect():
     connection.close()
-
-
-connect()
-query('SELECT * FROM Users')
-disconnect()
