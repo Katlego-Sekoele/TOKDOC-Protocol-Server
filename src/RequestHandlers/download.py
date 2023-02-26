@@ -56,8 +56,10 @@ def send(filename, serverSocket):
     file = open(filename, "rb")
     file_size = os.path.getsize(filename)
 
+# to be replaced with message generator
     serverSocket.send(filename.encode())
     serverSocket.send(str(file_size).encode)
+
     data = file.read()
     serverSocket.sendall(data)
 
