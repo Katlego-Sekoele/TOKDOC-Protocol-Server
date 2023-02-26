@@ -61,6 +61,14 @@ def send(filename, serverSocket):
     serverSocket.send(str(file_size).encode)
 
     data = file.read()
+
+    toSend = {
+        "file_size": file_size,
+        "file_name": filename,
+        "whatever maesela wants": 0,
+        "bytes": data
+    }
+
     serverSocket.sendall(data)
 
     serverSocket.send(b"<END>")
