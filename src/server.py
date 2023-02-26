@@ -1,4 +1,4 @@
-from src.Utilities import database_manager as database
+from Utilities import database_manager as database
 
 database.connect()
 
