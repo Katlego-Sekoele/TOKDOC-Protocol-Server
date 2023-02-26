@@ -38,7 +38,7 @@ def check_access(filename, email):
     resource_id = database.query(query, filename)[0]
 
     query = "SELECT user_id FROM resources where email = %s"
-    user_id = database.query(query, filename)[0]
+    user_id = database.query(query, email)[0]
 
     query = "SELECT access_id FROM Access where user_id=%s AND resource_id=%s"
     info = (user_id, resource_id)
