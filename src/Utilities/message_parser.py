@@ -5,32 +5,7 @@ import datetime
 import hashlib
 import os
 from dotenv import load_dotenv
-
-# CONSTANTS
-CHECKSUM_LENGTH = 64
-CRLF_LENGTH = 2
-MESSAGE_SIZE_LENGTH = 16
-START = '{START}'
-END = '{END}'
-CRLF = '\r\n'
-SPACE = ' '
-START_METHOD = '{{START METHOD}}'
-END_METHOD = '{{END METHOD}}'
-START_HEADERS = '{{START HEADERS}}'
-END_HEADERS = '{{END HEADERS}}'
-START_FILE = '{{START FILE}}'
-END_FILE = '{{END FILE}}'
-DATA = 'DATA'
-UPLOAD = 'UPLOAD'
-AUTH = 'AUTH'
-USER = 'USER'
-ACCESS_KEY = 'ACCESS_KEY'
-TIMESTAMP = 'TIMESTAMP'
-AUTHORIZED = 'AUTHORIZED'
-FILE_SIZE = 'FILE_SIZE'
-PARAMETERS = 'parameters'
-HEADERS = 'headers'
-FILE_SIZE_KEY = 'file_size'
+import constants
 
 
 def parse_message(message):
@@ -39,9 +14,9 @@ def parse_message(message):
     a dictionary of message elements as described in the TOKDOC protocol.
 
     The message must be in one of the following forms:
-    <checksum>\r\n<messagesize>\r\n{START}\r\n\r\n{{START METHOD}}\r\nAUTH <email> <password>\r\n{{END METHOD}}\r\n\r\n{{END}}
-    <checksum>\r\n<messagesize>\r\n{START}\r\n\r\n{{START METHOD}}\r\nEXIT <email> <password>\r\n{{END METHOD}}\r\n\r\n{{END}}
-    <checksum>\r\n<messagesize>\r\n{START}\r\n\r\n{{START METHOD}}\r\nDATA <method> <ip>:<port> [<file_name>]\r\n{{END METHOD}}\r\n\r\n{{START HEADERS}}\r\nUSER:<email>\r\nACCESS_KEY:<access_key>\r\n[TIMESTAMP:<iso format datetime>]\r\n[AUTHORIZED:(<email>,<email>,...)]\r\n{{END HEADERS}}\r\n\r\n{{START FILE}}\r\nFILE_SIZE:<size>\r\n{{END FILE}}\r\n\r\n{{END}}
+    <checksum>\r\n<message_size>\r\n{START}\r\n\r\n{{START METHOD}}\r\nAUTH <email> <password>\r\n{{END METHOD}}\r\n\r\n{{END}}
+    <checksum>\r\n<message_size>\r\n{START}\r\n\r\n{{START METHOD}}\r\nEXIT <email> <password>\r\n{{END METHOD}}\r\n\r\n{{END}}
+    <checksum>\r\n<message_size>\r\n{START}\r\n\r\n{{START METHOD}}\r\nDATA <method> <ip>:<port> [<file_name>]\r\n{{END METHOD}}\r\n\r\n{{START HEADERS}}\r\nUSER:<email>\r\nACCESS_KEY:<access_key>\r\n[TIMESTAMP:<iso format datetime>]\r\n[AUTHORIZED:(<email>,<email>,...)]\r\n{{END HEADERS}}\r\n\r\n{{START FILE}}\r\nFILE_SIZE:<size>\r\n{{END FILE}}\r\n\r\n{{END}}
 
     [] -> optional
     <> -> replace with appropriate data
@@ -101,12 +76,12 @@ def parse_message(message):
     parsed = {}
 
     method_group_type = get_method_group_type(message)
-    if method_group_type == AUTH:
-        parsed[PARAMETERS] = get_auth_parameters(message)
-    elif method_group_type == DATA:
-        parsed[PARAMETERS] = get_data_parameters(message)
-        parsed[HEADERS] = get_headers(message)
-        parsed[FILE_SIZE_KEY] = get_file_size(message)
+    if method_group_type == constants.AUTH:
+        parsed[constants.PARAMETERS] = get_auth_parameters(message)
+    elif method_group_type == constants.DATA:
+        parsed[constants.PARAMETERS] = get_data_parameters(message)
+        parsed[constants.HEADERS] = get_headers(message)
+        parsed[constants.FILE_SIZE_KEY] = get_file_size(message)
     else:
         raise TypeError('The method group type "' + method_group_type + '" is not supported')
 
@@ -119,7 +94,8 @@ def encoded_auth_test():
     :return: bytes -> an encoded AUTH message
     """
     return str.encode(
-        "5a32034ef2da2b10585068273adef5fd602b631b62b8527bb73d7669f2490aae\r\n77              \r\n{START}\r\n\r\n{{START METHOD}}\r\nAUTH test@test.com test\r\n{{END METHOD}}\r\n\r\n{{END}}"
+        "5a32034ef2da2b10585068273adef5fd602b631b62b8527bb73d7669f2490aae\r\n77              \r\n{START}\r\n\r\n{{"
+        "START METHOD}}\r\nAUTH test@test.com test\r\n{{END METHOD}}\r\n\r\n{{END}} "
     )
 
 
@@ -128,7 +104,11 @@ def encoded_data_test():
     :return: bytes -> an encoded DATA message
     """
     return str.encode(
-        "d59075b5224106ca9b6f9a83ded0cefe4be51f9c1fd5e45f3d76128e60de3a68\r\n314             \r\n{START}\r\n\r\n{{START METHOD}}\r\nDATA DOWNLOAD 127.0.0.1:3000 image.jpg\r\n{{END METHOD}}\r\n\r\n{{START HEADERS}}\r\nUSER:john@doe.com\r\nACCESS_KEY:kewuahcopfmw983c2[093mru0cum239rcum2[3pa[29cu,r\r\nTIMESTAMP:2023-02-22T20:14:31Z\r\n{{END HEADERS}}\r\n\r\n{{START FILE}}\r\nFILE_SIZE:33\r\njryghfiweufhjwemflnwefkwe\r\n{{END FILE}}\r\n\r\n{END}"
+        "d59075b5224106ca9b6f9a83ded0cefe4be51f9c1fd5e45f3d76128e60de3a68\r\n314             \r\n{START}\r\n\r\n{{"
+        "START METHOD}}\r\nDATA DOWNLOAD 127.0.0.1:3000 image.jpg\r\n{{END METHOD}}\r\n\r\n{{START "
+        "HEADERS}}\r\nUSER:john@doe.com\r\nACCESS_KEY:kewuahcopfmw983c2[093mru0cum239rcum2[3pa[29cu,"
+        "r\r\nTIMESTAMP:2023-02-22T20:14:31Z\r\n{{END HEADERS}}\r\n\r\n{{START "
+        "FILE}}\r\nFILE_SIZE:33\r\njryghfiweufhjwemflnwefkwe\r\n{{END FILE}}\r\n\r\n{END} "
     )
 
 
@@ -138,43 +118,43 @@ def test_message():
     """
     file_size = os.stat('src/test_data/test.png').st_size
 
-    message = (START +
-               CRLF + CRLF +
-               START_METHOD +
-               CRLF +
-               DATA + SPACE + UPLOAD + SPACE + '127.0.0.1:3000' + SPACE + 'tested.png' +
-               CRLF +
-               END_METHOD +
-               CRLF + CRLF +
-               START_HEADERS +
-               CRLF +
-               USER + ':test@test.com' +
-               CRLF +
-               ACCESS_KEY + ':' + generate_access_key_decoded('test@test.com') +
-               CRLF +
-               TIMESTAMP + ':' + str(datetime.datetime.utcnow().isoformat()) +
-               CRLF +
-               AUTHORIZED + ':' + '(test@test.com,test2@test2.com)' +
-               CRLF +
-               END_HEADERS +
-               CRLF + CRLF +
-               START_FILE +
-               CRLF +
-               FILE_SIZE + ":" + str(file_size) +
-               CRLF +
-               END_FILE +
-               CRLF + CRLF +
-               END)
+    message = (constants.START +
+               constants.CRLF + constants.CRLF +
+               constants.START_METHOD +
+               constants.CRLF +
+               constants.DATA + constants.SPACE + constants.UPLOAD + constants.SPACE + '127.0.0.1:3000' + constants.SPACE + 'tested.png' +
+               constants.CRLF +
+               constants.END_METHOD +
+               constants.CRLF + constants.CRLF +
+               constants.START_HEADERS +
+               constants.CRLF +
+               constants.USER + ':test@test.com' +
+               constants.CRLF +
+               constants.ACCESS_KEY + ':' + generate_access_key_decoded('test@test.com') +
+               constants.CRLF +
+               constants.TIMESTAMP + ':' + str(datetime.datetime.utcnow().isoformat()) +
+               constants.CRLF +
+               constants.AUTHORIZED + ':' + '(test@test.com,test2@test2.com)' +
+               constants.CRLF +
+               constants.END_HEADERS +
+               constants.CRLF + constants.CRLF +
+               constants.START_FILE +
+               constants.CRLF +
+               constants.FILE_SIZE + ":" + str(file_size) +
+               constants.CRLF +
+               constants.END_FILE +
+               constants.CRLF + constants.CRLF +
+               constants.END)
 
     message_length = len(message)
 
     message_length = str(message_length) + (16 - len(str(message_length))) * " "
 
-    message = message_length + CRLF + message
+    message = message_length + constants.CRLF + message
 
     hashed = hashlib.sha256(message.encode()).hexdigest()
 
-    message = hashed + CRLF + message
+    message = hashed + constants.CRLF + message
 
     return message
 
@@ -199,7 +179,7 @@ def get_checksum(message):
     :return: str -> the checksum provided in the message
     """
     message = get_message_string(message)
-    return message[:CHECKSUM_LENGTH]
+    return message[:constants.CHECKSUM_LENGTH]
 
 
 def get_message_size(message):
@@ -208,7 +188,8 @@ def get_message_size(message):
     :return: int -> message size as provided in the message
     """
     message = get_message_string(message)
-    return int(message[CHECKSUM_LENGTH + CRLF_LENGTH:CHECKSUM_LENGTH + CRLF_LENGTH + MESSAGE_SIZE_LENGTH].strip())
+    return int(message[
+               constants.CHECKSUM_LENGTH + constants.CRLF_LENGTH:constants.CHECKSUM_LENGTH + constants.CRLF_LENGTH + constants.MESSAGE_SIZE_LENGTH].strip())
 
 
 def get_message_content(message):
@@ -218,8 +199,8 @@ def get_message_content(message):
     """
     message = get_message_string(message)
     size = get_message_size(message)
-    offset = CHECKSUM_LENGTH + CRLF_LENGTH + MESSAGE_SIZE_LENGTH + CRLF_LENGTH
-    return message[offset: offset + CRLF_LENGTH + size]
+    offset = constants.CHECKSUM_LENGTH + constants.CRLF_LENGTH + constants.MESSAGE_SIZE_LENGTH + constants.CRLF_LENGTH
+    return message[offset: offset + constants.CRLF_LENGTH + size]
 
 
 def get_method_content(message):
@@ -229,8 +210,8 @@ def get_method_content(message):
     """
     message = get_message_string(message)
     message_content = get_message_content(message)
-    start_index = str(message_content).index(START_METHOD) + len(START_METHOD)
-    end_index = str(message_content).index(END_METHOD)
+    start_index = str(message_content).index(constants.START_METHOD) + len(constants.START_METHOD)
+    end_index = str(message_content).index(constants.END_METHOD)
     return message_content[start_index: end_index].strip('\r\n')
 
 
@@ -244,7 +225,7 @@ def get_auth_parameters(message):
         'password': str
     }
     """
-    if get_method_group_type(message) != AUTH:
+    if get_method_group_type(message) != constants.AUTH:
         raise TypeError('The method group type must be "AUTH" to use this function')
 
     message = get_message_string(message)
@@ -325,8 +306,8 @@ def get_header_content(message):
     :return: str -> the string contained in the {{START HEADERS}}, {{END HEADERS}} tags
     """
     message_content = get_message_content(message)
-    start_index = str(message_content).index(START_HEADERS) + len(START_HEADERS)
-    end_index = str(message_content).index(END_HEADERS)
+    start_index = str(message_content).index(constants.START_HEADERS) + len(constants.START_HEADERS)
+    end_index = str(message_content).index(constants.END_HEADERS)
     return message_content[start_index: end_index].strip('\r\n')
 
 
@@ -341,14 +322,15 @@ def get_headers(message):
     headers = {}
     for header in headers_list:
         key = header[:header.index(':')]
-        value = None
-        if key == AUTHORIZED:
+        if key == constants.AUTHORIZED:
             value = header[header.index(':') + 2: -1]
             value = value.replace(' ', '')
             value = value.split(',')
         else:
             value = header[header.index(':') + 1:]
-        headers[key] = value
+
+        if value:
+            headers[key] = value
 
     return headers
 
@@ -360,8 +342,8 @@ def get_file_size(message):
     """
     message = get_message_string(message)
     message_content = get_message_content(message)
-    start_index = str(message_content).index(START_FILE) + len(START_FILE)
-    end_index = str(message_content).index(END_FILE)
+    start_index = str(message_content).index(constants.START_FILE) + len(constants.START_FILE)
+    end_index = str(message_content).index(constants.END_FILE)
     message_content = message_content[start_index: end_index].strip('\r\n')
     return int(message_content.split(':')[1])
 
