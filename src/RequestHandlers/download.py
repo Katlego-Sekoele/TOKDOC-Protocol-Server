@@ -1,4 +1,5 @@
 # sending a file to the client
+from socket import *
 
 from src.Utilities import database_manager as database
 
@@ -44,11 +45,24 @@ def check_access(filename, email):
 
     key = database.query(query, info)
 
-
     if key is not None:
         access = True
 
     return access
 
+
 # uploading the actual contents of the file to the client :)
+def send(filename, serverSocket):
+    file = open(filename, "rb")
+    file_size = os.path.getsize(filename)
+
+    serverSocket.send(filename.encode())
+    serverSocket.send(str(file_size).encode)
+    data = file.read()
+    serverSocket.sendall(data)
+
+    serverSocket.send(b"<END>")
+
+    file.close()
+
 # please kindly do this part Tiyani or Maesela
