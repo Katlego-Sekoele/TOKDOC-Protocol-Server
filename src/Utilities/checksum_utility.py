@@ -15,4 +15,4 @@ def get_checksum(message):
 
 def generate_checksum(message):
     message = get_message_string(message)
-    return hashlib.sha256(message).hexdigest()
+    return hashlib.sha256(message.encode()).hexdigest()
