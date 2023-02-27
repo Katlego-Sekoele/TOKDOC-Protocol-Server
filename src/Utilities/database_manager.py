@@ -43,7 +43,7 @@ def connect():
         raise Exception("Error while connecting to MySQL", e)
 
 
-def query(query_template, query_values=None):
+def query(query_template, query_values=None) -> list[dict]:
     """
     Query the database.
     Leave query_values as none if you do not wish to use query parameters

@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 import constants
 
 
-def parse_message(message):
+def parse_message(message) -> dict:
     """
     Function that takes a string message and returns
     a dictionary of message elements as described in the TOKDOC protocol.
@@ -89,7 +89,7 @@ def parse_message(message):
 
 
 # START TESTING STUFF
-def encoded_auth_test():
+def encoded_auth_test() -> bytes:
     """
     :return: bytes -> an encoded AUTH message
     """
@@ -99,7 +99,7 @@ def encoded_auth_test():
     )
 
 
-def encoded_data_test():
+def encoded_data_test() -> bytes:
     """
     :return: bytes -> an encoded DATA message
     """
@@ -112,7 +112,7 @@ def encoded_data_test():
     )
 
 
-def test_message():
+def test_message() -> str:
     """
     :return: str -> a DATA message
     """
@@ -159,7 +159,7 @@ def test_message():
     return message
 
 
-def test_file():
+def test_file() -> bytes:
     """
     :return: bytes -> the bytes of a test file
     """
@@ -173,7 +173,7 @@ def test_file():
 # END TESTING STUFF
 
 
-def get_message_size(message):
+def get_message_size(message) -> int:
     """
     :param message:
     :return: int -> message size as provided in the message
@@ -183,7 +183,7 @@ def get_message_size(message):
                constants.CHECKSUM_LENGTH + constants.CRLF_LENGTH:constants.CHECKSUM_LENGTH + constants.CRLF_LENGTH + constants.MESSAGE_SIZE_LENGTH].strip())
 
 
-def get_message_content(message):
+def get_message_content(message) -> str:
     """
     :param message:
     :return: str -> the message content excluding the checksum and message size
@@ -194,7 +194,7 @@ def get_message_content(message):
     return message[offset: offset + constants.CRLF_LENGTH + size]
 
 
-def get_method_content(message):
+def get_method_content(message) -> str:
     """
     :param message:
     :return: str -> The content enclosed with in the {{START METHOD}}, {{END METHOD}} tags
@@ -206,7 +206,7 @@ def get_method_content(message):
     return message_content[start_index: end_index].strip('\r\n')
 
 
-def get_auth_parameters(message):
+def get_auth_parameters(message) -> dict:
     """
     :param message:
     :return: dict -> returns a dictionary
@@ -230,7 +230,7 @@ def get_auth_parameters(message):
     }
 
 
-def generate_access_key_decoded(email):
+def generate_access_key_decoded(email) -> str:
     """
     Generates an access key for the provided email
     :param email:
@@ -242,7 +242,7 @@ def generate_access_key_decoded(email):
     return hashlib.sha256(pre_hash.encode()).hexdigest()
 
 
-def get_data_parameters(message):
+def get_data_parameters(message) -> dict:
     """
     :param message:
     :return: dict -> {
@@ -271,7 +271,7 @@ def get_data_parameters(message):
     return parameters
 
 
-def get_method_group_type(message):
+def get_method_group_type(message) -> str:
     """
     Returns the type of message (AUTH or DATA)
     :param message:
@@ -281,7 +281,7 @@ def get_method_group_type(message):
     return get_method_content(message).split()[0]
 
 
-def get_method_type(message):
+def get_method_type(message) -> str:
     """
     Returns the method type (DOWNLOAD, UPLOAD, or LIST)
     :param message:
@@ -291,7 +291,7 @@ def get_method_type(message):
     return get_method_content(message).split()[1]
 
 
-def get_header_content(message):
+def get_header_content(message) -> str:
     """
     :param message:
     :return: str -> the string contained in the {{START HEADERS}}, {{END HEADERS}} tags
@@ -302,7 +302,7 @@ def get_header_content(message):
     return message_content[start_index: end_index].strip('\r\n')
 
 
-def get_headers(message):
+def get_headers(message) -> dict:
     """
     :param message:
     :return: dict -> containing key value pairs of all the headers
@@ -326,7 +326,7 @@ def get_headers(message):
     return headers
 
 
-def get_file_size(message):
+def get_file_size(message) -> int:
     """
     :param message:
     :return: int -> file size as specified in the message
@@ -339,7 +339,7 @@ def get_file_size(message):
     return int(message_content.split(':')[1])
 
 
-def save_file_to_server(message, file_bytes):
+def save_file_to_server(message, file_bytes) -> bytes:
     """
     saves the file to the server
     :param message:
@@ -352,7 +352,7 @@ def save_file_to_server(message, file_bytes):
     file.close()
 
 
-def get_message_string(message):
+def get_message_string(message) -> str:
     """
     :param message: string or bytes of the message
     :return: the string formatted message

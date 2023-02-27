@@ -42,9 +42,10 @@ def build_response_string(status: Status, access_key=None, file_size: int = None
     return checksum + CRLF + message
 
 
-def build_response_bytes(status_code: Status, access_key=None) -> bytes:
+def build_response_bytes(status_code: Status, access_key=None, file_size: int = None) -> bytes:
     """
     Encodes the build_response_string() return value
+    :param file_size:
     :param status_code:
     :param access_key:
     :return: bytes
