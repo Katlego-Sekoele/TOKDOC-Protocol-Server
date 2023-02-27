@@ -4,8 +4,10 @@ File containing functions to handle the parsing of a TOKDOC formatted message.
 import datetime
 import hashlib
 import os
+import platform
+
 from dotenv import load_dotenv
-import constants
+from Utilities import constants
 
 
 def parse_message(message) -> dict:
@@ -85,7 +87,7 @@ def parse_message(message) -> dict:
     else:
         raise TypeError('The method group type "' + method_group_type + '" is not supported')
 
-    print(parsed)
+    return parsed
 
 
 # START TESTING STUFF
@@ -116,7 +118,10 @@ def test_message() -> str:
     """
     :return: str -> a DATA message
     """
-    file_size = os.stat('src/test_data/test.png').st_size
+    if platform.system() == 'Windows':
+        file_size = os.stat(".\\test_data\\test.png").st_size
+    else:
+        file_size = os.stat('./test_data/test.png').st_size
 
     message = (constants.START +
                constants.CRLF + constants.CRLF +
