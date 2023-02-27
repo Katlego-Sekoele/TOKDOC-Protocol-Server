@@ -1,19 +1,31 @@
+"""
+File containing functions to build a response message
+"""
 from codes import *
 from checksum_utility import generate_checksum
 from constants import *
 
 
-def build_auth_response_string(status_code: Status, access_key=None) -> str:
+def build_response_string(status: Status, access_key=None, file_size: int = None) -> str:
+    """
+    :param file_size:
+    :param status: codes.Status object
+    :param access_key:
+    :return: str -> string formatted response message according to TOKDOC protocol
+    """
     message = (
             START +
             CRLF + CRLF +
             START_RESPONSE +
             CRLF +
-            str(status_code.code) + SPACE + QUOTES + status_code.status + QUOTES
+            str(status.code) + SPACE + QUOTES + status.status + QUOTES
     )
 
     if access_key:
         message += SPACE + access_key
+
+    if file_size:
+        message += SPACE + str(file_size)
 
     message += (
         CRLF +
@@ -27,7 +39,14 @@ def build_auth_response_string(status_code: Status, access_key=None) -> str:
                CRLF + message)
 
     checksum = generate_checksum(message)
-    return (checksum + CRLF + message)
+    return checksum + CRLF + message
 
 
-print(build_auth_response_string(SUCCESSFUL_AUTHENTICATION))
+def build_response_bytes(status_code: Status, access_key=None) -> bytes:
+    """
+    Encodes the build_response_string() return value
+    :param status_code:
+    :param access_key:
+    :return: bytes
+    """
+    return build_response_string(status_code, access_key).encode()
