@@ -1,15 +1,7 @@
-CODE_SUCCESSFUL_AUTHENTICATION = 200
-CODE_INCORRECT_CREDENTIALS = 501
-CODE_MESSAGE_CORRUPTED = 502
-CODE_SIGN_UP_ERROR = 503
-CODE_INTERNAL_SERVER_ERROR = 500
-CODE_EXITING_AUTHORIZED = 201
-CODE_INVALID_FORMAT = 504
-
-STATUS_SUCCESSFUL_AUTHENTICATION = 'Successful authentication'
-STATUS_INCORRECT_CREDENTIALS = 'Incorrect credentials'
-STATUS_MESSAGE_CORRUPTED = 'Message corrupted'
-STATUS_SIGN_UP_ERROR = 'Sign up error'
-STATUS_INTERNAL_SERVER_ERROR = 'Internal Server Error'
-STATUS_EXITING_AUTHORIZED = 'Exiting authorized'
-STATUS_INVALID_FORMAT = 'Invalid format'
+SUCCESSFUL_AUTHENTICATION = {'code':200, 'status':'Successful authentication'}
+INCORRECT_CREDENTIALS =  {'code':501,'status': 'Incorrect credentials'}
+MESSAGE_CORRUPTED = {'code':502,'status': 'status corrupted'}
+SIGN_UP_ERROR = {'code':503,'status': 'Sign up error'}
+INTERNAL_SERVER_ERROR = {'code':500,'status': 'Internal Server Error'}
+EXITING_AUTHORIZED = {'code':201,'status': 'Exiting authorized'}
+INVALID_FORMAT = {'code':504,'status': 'Invalid format'}

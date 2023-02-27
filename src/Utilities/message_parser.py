@@ -173,15 +173,6 @@ def test_file():
 # END TESTING STUFF
 
 
-def get_checksum(message):
-    """
-    :param message:
-    :return: str -> the checksum provided in the message
-    """
-    message = get_message_string(message)
-    return message[:constants.CHECKSUM_LENGTH]
-
-
 def get_message_size(message):
     """
     :param message:
