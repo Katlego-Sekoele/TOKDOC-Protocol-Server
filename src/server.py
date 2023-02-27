@@ -1,4 +1,5 @@
 from Utilities import database_manager as database
+from RequestHandlers import list as ListRequestHandler
 
 database.connect()
 
