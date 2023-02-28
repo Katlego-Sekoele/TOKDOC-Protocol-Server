@@ -79,9 +79,9 @@ def parse_message(message) -> dict:
 
     method_group_type = get_method_group_type(message)
     if method_group_type == constants.AUTH:
-        parsed[constants.PARAMETERS] = get_auth_parameters(message)
+        parsed[constants.PARAMETERS_KEY] = get_auth_parameters(message)
     elif method_group_type == constants.DATA:
-        parsed[constants.PARAMETERS] = get_data_parameters(message)
+        parsed[constants.PARAMETERS_KEY] = get_data_parameters(message)
         parsed[constants.HEADERS] = get_headers(message)
         parsed[constants.FILE_SIZE_KEY] = get_file_size(message)
     else:
