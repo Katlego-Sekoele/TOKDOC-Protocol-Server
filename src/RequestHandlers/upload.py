@@ -6,7 +6,7 @@ import os
 
 
 def save_filename_to_db(filename, ID):
-    filename, type = os.path.splitext(filename)
+    throwaway, type = os.path.splitext(filename)
     command = 'INSERT INTO users (type, filepath, upload_date, owner ID) VALUES (%s, %s)'
     cred = (type, filename, datetime.now, ID)
     database.query(command, cred)
