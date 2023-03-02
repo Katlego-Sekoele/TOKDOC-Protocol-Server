@@ -12,8 +12,10 @@ class Status:
 
 SUCCESSFUL_AUTHENTICATION = Status(**{'code': 200, 'status': 'Successful authentication'})
 INCORRECT_CREDENTIALS = Status(**{'code': 501, 'status': 'Incorrect credentials'})
-MESSAGE_CORRUPTED = Status(**{'code': 502, 'status': 'status corrupted'})
+MESSAGE_CORRUPTED = Status(**{'code': 502, 'status': 'Corrupted'})
 SIGN_UP_ERROR = Status(**{'code': 503, 'status': 'Sign up error'})
+FILE_NOT_FOUND = Status(**{'code': 301, 'status': 'File not found'})
+ACCESS_DENIED = Status(**{'code': 302, 'status': 'Access to this file is denied'})
 INTERNAL_SERVER_ERROR = Status(**{'code': 500, 'status': 'Internal Server Error'})
 EXITING_AUTHORIZED = Status(**{'code': 201, 'status': 'Exiting authorized'})
 INVALID_FORMAT = Status(**{'code': 504, 'status': 'Invalid format'})

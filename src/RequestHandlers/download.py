@@ -2,7 +2,8 @@
 from socket import *
 
 from src.Utilities import database_manager as database
-from src.Utilities import message_serializer as mBuilder
+from src.Utilities import message_serializer as m_builder
+from src.Utilities import message_parser as m_breaker
 from src.Utilities import codes
 
 
@@ -54,17 +55,27 @@ def check_access(filename, email):
 
 
 # uploading the actual contents of the file to the client :)
-def send(filename, serverSocket):
-    file = open(filename, "rb")
-    file_size = os.path.getsize(filename)
+def send(message, serverSocket):
+    message = m_breaker.get_message_string(message)
+    filename = m_breaker.get_data_parameters(message)['file_name']
+    id = m_breaker.get_headers(message)['USER']
+    valid = valid_filename(filename)
+    permissions = check_permissions(filename)
+    access = check_access(filename, id)
 
-    message = mBuilder.build_response_bytes(codes.SUCCESSFUL_AUTHENTICATION, None, file_size)
-    serverSocket.send(message)
+    if (valid and permissions) or (valid and access):
+        file = open(filename, "rb")
+        file_size = os.path.getsize(filename)
 
-    data = file.read()
+        message = m_builder.build_response_bytes(codes.SUCCESSFUL_AUTHENTICATION, None, file_size)
+        serverSocket.send(message)
 
-    serverSocket.sendall(data)
+        data = file.read()
 
-    serverSocket.send(b"<END>")
+        serverSocket.sendall(data)
 
-    file.close()
+        file.close()
+    elif valid:
+        message = m_builder.build_response_bytes(codes.INCORRECT_CREDENTIALS, None, None)
+        serverSocket.send(message)
+    else:
