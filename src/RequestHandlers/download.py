@@ -2,9 +2,7 @@
 from socket import *
 
 from src.Utilities import database_manager as database
-
 from src.Utilities import message_serializer as mBuilder
-
 from src.Utilities import codes
 
 

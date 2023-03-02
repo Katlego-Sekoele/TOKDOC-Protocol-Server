@@ -343,20 +343,6 @@ def get_file_size(message) -> int:
     message_content = message_content[start_index: end_index].strip('\r\n')
     return int(message_content.split(':')[1])
 
-
-def save_file_to_server(message, file_bytes) -> bytes:
-    """
-    saves the file to the server
-    :param message:
-    :param file_bytes: the bytes of the file to save
-    """
-    message = get_message_string(message)
-    file_name = get_data_parameters(message)['file_name']
-    file = open(file_name, 'wb')
-    file.write(file_bytes)
-    file.close()
-
-
 def get_message_string(message) -> str:
     """
     :param message: string or bytes of the message
