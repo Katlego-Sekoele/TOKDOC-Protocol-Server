@@ -1,4 +1,4 @@
-# handle upload request
+# receiving a file from client
 from datetime import *
 from src.Utilities import database_manager as database
 

@@ -3,6 +3,10 @@ from socket import *
 
 from src.Utilities import database_manager as database
 
+from src.Utilities import message_serializer as mBuilder
+
+from src.Utilities import codes
+
 
 # checks if file name entered is valid
 def valid_filename(filename):
@@ -56,23 +60,13 @@ def send(filename, serverSocket):
     file = open(filename, "rb")
     file_size = os.path.getsize(filename)
 
-# to be replaced with message generator
-    serverSocket.send(filename.encode())
-    serverSocket.send(str(file_size).encode)
+    message = mBuilder.build_response_bytes(codes.SUCCESSFUL_AUTHENTICATION, None, file_size)
+    serverSocket.send(message)
 
     data = file.read()
-
-    toSend = {
-        "file_size": file_size,
-        "file_name": filename,
-        "whatever maesela wants": 0,
-        "bytes": data
-    }
 
     serverSocket.sendall(data)
 
     serverSocket.send(b"<END>")
 
     file.close()
-
-# please kindly do this part Tiyani or Maesela

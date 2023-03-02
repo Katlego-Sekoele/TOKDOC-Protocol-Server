@@ -50,4 +50,4 @@ def build_response_bytes(status_code: Status, access_key=None, file_size: int = 
     :param access_key:
     :return: bytes
     """
-    return build_response_string(status_code, access_key).encode()
+    return build_response_string(status_code, access_key, file_size).encode()
