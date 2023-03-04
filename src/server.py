@@ -3,8 +3,12 @@ from socket import *
 import os
 from Utilities import database_manager as database
 from RequestHandlers import list as ListRequestHandler
+from RequestHandlers import authentication as AuthRequestHandler
 from Utilities import message_parser
+from Utilities import message_serializer
 from Utilities import constants
+from Utilities import codes
+
 
 BACKLOG = 4
 PORT = 3000
@@ -30,30 +34,66 @@ def launch():
 
         full_message, checksum, message_no_checksum = receive_message(connection_socket)
 
-        if not is_correct_checksum(checksum, message_no_checksum):
-            # message was changed during transmission
-            connection_socket.close()
-            continue
-
-        parsed_request = message_parser.parse_message(full_message)  # parse the message
         response_string = ''
         content = ''
 
-        if parsed_request[constants.PARAMETERS_KEY][constants.METHOD_KEY] == constants.LIST:
-            email = parsed_request[constants.HEADERS][constants.USER]
-            access_key = parsed_request[constants.HEADERS][constants.ACCESS_KEY]
-            response_string, content = ListRequestHandler.response(email, access_key)
-            print(response_string, content)
+        if not is_correct_checksum(checksum, message_no_checksum):
+            # message was changed during transmission
+            response_string = message_serializer.build_response_string(codes.MESSAGE_CORRUPTED, file_size=0)
+            response_string = cast_bytes(response_string)
+            content = cast_bytes(content)
+            connection_socket.send(response_string)
+            connection_socket.send(content)
+            connection_socket.close()
+            continue
 
-        if (parsed_request[constants.FILE_SIZE_KEY] > 0) and \
-                (parsed_request[constants.PARAMETERS_KEY][constants.METHOD_KEY] == constants.UPLOAD):
+        try:
+            parsed_request = message_parser.parse_message(full_message)  # parse the message
+        except TypeError:
+            # message was incorrectly formatted
+            response_string = message_serializer.build_response_string(codes.INVALID_FORMAT, file_size=0)
+            response_string = cast_bytes(response_string)
+            content = cast_bytes(content)
+            connection_socket.send(response_string)
+            connection_socket.send(content)
+            connection_socket.close()
+            continue
 
-            file = b''
+        try:
+            if parsed_request[constants.PARAMETERS_KEY][constants.METHOD_GROUP_KEY] == constants.AUTH:
+                email = parsed_request[constants.PARAMETERS_KEY][constants.AUTH_EMAIL_KEY]
+                password = parsed_request[constants.PARAMETERS_KEY][constants.AUTH_PASSWORD_KEY]
+                response_string, content = AuthRequestHandler.response(email, password)
+        except:
+            # key probably doesn't exist
+            # TODO: find exception name, and send appropriate response
+            pass
 
-            while len(file) < parsed_request[constants.FILE_SIZE_KEY]:
-                file += connection_socket.recv(DEFAULT_BUFFER)
+        try:
+            if parsed_request[constants.PARAMETERS_KEY][constants.METHOD_KEY] == constants.LIST:
+                email = parsed_request[constants.HEADERS][constants.USER]
+                access_key = parsed_request[constants.HEADERS][constants.ACCESS_KEY]
+                response_string, content = ListRequestHandler.response(email, access_key)
+                print(response_string, content)
+        except:
+            # key probably doesn't exist
+            # TODO: find exception name, and send appropriate response
+            pass
 
-            message_parser.save_file_to_server(full_message, file)
+        try:
+            if (parsed_request[constants.PARAMETERS_KEY][constants.METHOD_KEY] == constants.UPLOAD) and \
+                    (parsed_request[constants.FILE_SIZE_KEY] > 0):
+
+                file = b''
+
+                while len(file) < parsed_request[constants.FILE_SIZE_KEY]:
+                    file += connection_socket.recv(DEFAULT_BUFFER)
+
+                message_parser.save_file_to_server(full_message, file)
+        except:
+            # key probably doesn't exist
+            # TODO: find exception name, and send appropriate response
+            pass
 
         # send response_string and content
 

@@ -5,6 +5,7 @@ from Utilities.codes import *
 from Utilities.checksum_utility import generate_checksum
 from Utilities.constants import *
 
+
 def build_response_string(status: Status, access_key=None, file_size: int = None) -> str:
     """
     :param file_size:
@@ -27,14 +28,14 @@ def build_response_string(status: Status, access_key=None, file_size: int = None
         message += SPACE + str(file_size)
 
     message += (
-        CRLF +
-        END_RESPONSE +
-        CRLF + CRLF +
-        END
+            CRLF +
+            END_RESPONSE +
+            CRLF + CRLF +
+            END
     )
 
     message_size = len(message.encode())
-    message = (str(message_size) + (MESSAGE_SIZE_LENGTH-len(str(message_size)))*" " +
+    message = (str(message_size) + (MESSAGE_SIZE_LENGTH - len(str(message_size))) * " " +
                CRLF + message)
 
     checksum = generate_checksum(message)
