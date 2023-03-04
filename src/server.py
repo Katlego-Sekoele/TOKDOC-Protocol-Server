@@ -5,6 +5,7 @@ from Utilities import database_manager as database
 from RequestHandlers import list as ListRequestHandler
 from RequestHandlers import authentication as AuthRequestHandler
 from RequestHandlers import upload as UploadRequestHandler
+from RequestHandlers import download as DownloadRequestHandler
 from Utilities import message_parser
 from Utilities import message_serializer
 from Utilities import constants
@@ -35,7 +36,7 @@ def launch():
         full_message, checksum, message_no_checksum = receive_message(connection_socket)
 
         response_string = ''
-        content = ''
+        content = b''
 
         if not is_correct_checksum(checksum, message_no_checksum):
             # message was changed during transmission
@@ -101,12 +102,10 @@ def launch():
         try:
             if parsed_request[constants.PARAMETERS_KEY][constants.METHOD_KEY] == constants.DOWNLOAD:
 
-                file = b''
-
-                while len(file) < parsed_request[constants.FILE_SIZE_KEY]:
-                    file += connection_socket.recv(DEFAULT_BUFFER)
-
-                message_parser.save_file_to_server(full_message, file)
+                email = parsed_request[constants.HEADERS][constants.USER]
+                access_key = parsed_request[constants.HEADERS][constants.ACCESS_KEY]
+                file_name = parsed_request[constants.PARAMETERS_KEY]['filename']
+                response_string, content = DownloadRequestHandler.response(email, file_name)
         except:
             # key probably doesn't exist
             # TODO: find exception name, and send appropriate response

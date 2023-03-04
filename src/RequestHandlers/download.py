@@ -1,10 +1,30 @@
 # sending a file to the client
+import os
 from socket import *
 
 from src.Utilities import database_manager as database
 from src.Utilities import message_serializer as m_builder
 from src.Utilities import message_parser as m_breaker
 from src.Utilities import codes
+
+
+def response(email, filename):
+
+    response_string = ''
+    file_bytes = b''
+    code = codes.SUCCESS
+
+    if not valid_filename(filename):
+        code = codes.FILE_NOT_FOUND
+    else:
+        if not is_public(filename) or not has_access():
+            code = codes.ACCESS_DENIED
+        else:
+            file_bytes, file_size = send()
+
+    response_string = m_builder.build_response_string(code, file_size=file_size)
+    return response_string, file_bytes
+
 
 
 # checks if file name entered is valid
@@ -15,26 +35,26 @@ def valid_filename(filename):
 
     file_exists = results
 
-    if file_exists is not None:
+    if file_exists is not None and len(file_exists) > 0:
         valid = True
 
     return valid
 
 
 # this method works when valid_filename is true
-def check_permissions(filename):
+def is_public(filename):
     public = False
-    query = "SELECT public FROM recourses WHERE resource_path = %s"
+    query = "SELECT public FROM Recourses WHERE resource_path = %s"
     access = database.query(query, filename)
 
-    if access == "True":
+    if access == 1:
         public = True
 
     return public
 
 
 # checks if an access ID exists for the client
-def check_access(filename, email):
+def has_access(filename, email):
     access = False
     query = "SELECT resource_id FROM resources where resource_path = %s"
 
@@ -55,29 +75,11 @@ def check_access(filename, email):
 
 
 # uploading the actual contents of the file to the client :)
-def send(message, serverSocket):
-    message = m_breaker.get_message_string(message)
-    filename = m_breaker.get_data_parameters(message)['file_name']
-    id = m_breaker.get_headers(message)['USER']
-    valid = valid_filename(filename)
-    permissions = check_permissions(filename)
-    access = check_access(filename, id)
+def send(filename):
 
-    if (valid and permissions) or (valid and access):
-        file = open(filename, "rb")
-        file_size = os.path.getsize(filename)
+    file = open(filename, "rb")
+    file_size = os.path.getsize(filename)
+    data = file.read()
+    file.close()
 
-        message = m_builder.build_response_bytes(codes.SUCCESSFUL_AUTHENTICATION, None, file_size)
-        serverSocket.send(message)
-
-        data = file.read()
-
-        serverSocket.sendall(data)
-
-        file.close()
-    elif valid:
-        message = m_builder.build_response_bytes(codes.ACCESS_DENIED, None, None)
-        serverSocket.send(message)
-    else:
-        message = m_builder.build_response_bytes(codes.FILE_NOT_FOUND, None, None)
-        serverSocket.send(message)
+    return data, file_size
