@@ -4,11 +4,11 @@ import os
 from Utilities import database_manager as database
 from RequestHandlers import list as ListRequestHandler
 from RequestHandlers import authentication as AuthRequestHandler
+from RequestHandlers import upload as UploadRequestHandler
 from Utilities import message_parser
 from Utilities import message_serializer
 from Utilities import constants
 from Utilities import codes
-
 
 BACKLOG = 4
 PORT = 3000
@@ -83,6 +83,23 @@ def launch():
         try:
             if (parsed_request[constants.PARAMETERS_KEY][constants.METHOD_KEY] == constants.UPLOAD) and \
                     (parsed_request[constants.FILE_SIZE_KEY] > 0):
+
+                file = b''
+
+                while len(file) < parsed_request[constants.FILE_SIZE_KEY]:
+                    file += connection_socket.recv(DEFAULT_BUFFER)
+
+                # email = parsed_request[constants.HEADERS][constants.USER]
+                # access_key = parsed_request[constants.HEADERS][constants.ACCESS_KEY]
+                response_string, content = UploadRequestHandler.response(full_message.decode(), file)
+                print(response_string, content)
+        except:
+            # key probably doesn't exist
+            # TODO: find exception name, and send appropriate response
+            pass
+
+        try:
+            if parsed_request[constants.PARAMETERS_KEY][constants.METHOD_KEY] == constants.DOWNLOAD:
 
                 file = b''
 
