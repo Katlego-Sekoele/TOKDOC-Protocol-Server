@@ -21,7 +21,7 @@ def response(email: str, access_key=None) -> tuple:
     return response_string, files_string.strip('\r\n')
 
 
-def return_list(message) -> list[dict]:
+def return_list(email) -> list[dict]:
     """
     A method that will return a list of files that are public or that the user owns
     :param
@@ -34,10 +34,9 @@ def return_list(message) -> list[dict]:
         'public': bool
     }
     """
-    message = m_breaker.get_message_string(message)
-    id = m_breaker.get_headers(message)['USER']
+
     users_query = "SELECT * FROM Users WHERE email = %s"
-    users_parameters = (id,)
+    users_parameters = (email,)
     users: list[dict] = database.query(users_query, users_parameters)
 
     if len(users) == 0:

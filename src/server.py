@@ -84,7 +84,6 @@ def launch():
                 email = parsed_request[constants.HEADERS][constants.USER]
                 access_key = parsed_request[constants.HEADERS][constants.ACCESS_KEY]
                 response_string, content = ListRequestHandler.response(email, access_key)
-                print(response_string, content)
         except FileNotFoundError:
             # key probably doesn't exist
             # TODO: find exception name, and send appropriate response
@@ -102,7 +101,6 @@ def launch():
                 # email = parsed_request[constants.HEADERS][constants.USER]
                 # access_key = parsed_request[constants.HEADERS][constants.ACCESS_KEY]
                 response_string, content = UploadRequestHandler.response(full_message.decode(), file)
-                print(response_string, content)
         except:
             # key probably doesn't exist
             # TODO: find exception name, and send appropriate response
