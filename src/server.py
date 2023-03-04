@@ -18,6 +18,15 @@ MESSAGE_SIZE_CRLF_LENGTH = 18
 DEFAULT_BUFFER = 1024
 
 
+def cast_bytes(content) -> bytes:
+    if isinstance(content, str):
+        return content.encode()
+    elif isinstance(content, bytes):
+        return content
+    else:
+        raise TypeError('The content must be bytes or string. Received', type(content))
+
+
 def launch():
     """
     Function that will start up the server. Will start listening
@@ -50,7 +59,7 @@ def launch():
 
         try:
             parsed_request = message_parser.parse_message(full_message)  # parse the message
-        except TypeError:
+        except:
             # message was incorrectly formatted
             response_string = message_serializer.build_response_string(codes.INVALID_FORMAT, file_size=0)
             response_string = cast_bytes(response_string)
@@ -76,7 +85,7 @@ def launch():
                 access_key = parsed_request[constants.HEADERS][constants.ACCESS_KEY]
                 response_string, content = ListRequestHandler.response(email, access_key)
                 print(response_string, content)
-        except:
+        except FileNotFoundError:
             # key probably doesn't exist
             # TODO: find exception name, and send appropriate response
             pass
@@ -139,12 +148,3 @@ if __name__ == '__main__':
     database.connect()
     launch()
     database.disconnect()
-
-
-def cast_bytes(content) -> bytes:
-    if isinstance(content, str):
-        return content.encode()
-    elif isinstance(content, bytes):
-        return content
-    else:
-        raise TypeError('The content must be bytes or string. Received', type(content))

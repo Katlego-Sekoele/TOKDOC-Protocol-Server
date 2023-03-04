@@ -6,7 +6,7 @@ import os
 from dotenv import load_dotenv
 
 from Utilities import codes, message_serializer
-from src.Utilities import database_manager as database
+from Utilities import database_manager as database
 
 
 def response(email: str, password: str) -> tuple:

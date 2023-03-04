@@ -328,6 +328,8 @@ def get_headers(message) -> dict:
         if value:
             headers[key] = value
 
+    print(headers)
+
     return headers
 
 

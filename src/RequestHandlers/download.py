@@ -2,10 +2,10 @@
 import os
 from socket import *
 
-from src.Utilities import database_manager as database
-from src.Utilities import message_serializer as m_builder
-from src.Utilities import message_parser as m_breaker
-from src.Utilities import codes
+from Utilities import database_manager as database
+from Utilities import message_serializer as m_builder
+from Utilities import message_parser as m_breaker
+from Utilities import codes
 
 
 def response(email, filename):
