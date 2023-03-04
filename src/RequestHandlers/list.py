@@ -1,8 +1,23 @@
 """
  listing all the available files
 """
-from src.Utilities import database_manager as database
-from src.Utilities import message_parse as m_breaker
+from Utilities import database_manager as database
+from Utilities import message_serializer as message_serializer
+from Utilities import codes
+
+
+def response(email: str, access_key=None) -> tuple:
+    files = return_list(email)
+    files_string = ''
+    for file in files:
+        files_string += file['resource_path'] + '\r\n'
+
+    code = None
+    if len(files_string) > 0:
+        code = codes.SUCCESS
+
+    response_string = message_serializer.build_response_string(code, access_key, len(files_string))
+    return response_string, files_string.strip('\r\n')
 
 
 def return_list(message) -> list[dict]:

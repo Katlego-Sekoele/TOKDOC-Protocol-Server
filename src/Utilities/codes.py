@@ -10,6 +10,7 @@ class Status:
         return self.status
 
 
+SUCCESS = Status(**{'code': 201, 'status': 'Success'})
 SUCCESSFUL_AUTHENTICATION = Status(**{'code': 200, 'status': 'Successful authentication'})
 INCORRECT_CREDENTIALS = Status(**{'code': 501, 'status': 'Incorrect credentials'})
 MESSAGE_CORRUPTED = Status(**{'code': 502, 'status': 'Corrupted'})

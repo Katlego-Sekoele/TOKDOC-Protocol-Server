@@ -36,6 +36,14 @@ def launch():
             continue
 
         parsed_request = message_parser.parse_message(full_message)  # parse the message
+        response_string = ''
+        content = ''
+
+        if parsed_request[constants.PARAMETERS_KEY][constants.METHOD_KEY] == constants.LIST:
+            email = parsed_request[constants.HEADERS][constants.USER]
+            access_key = parsed_request[constants.HEADERS][constants.ACCESS_KEY]
+            response_string, content = ListRequestHandler.response(email, access_key)
+            print(response_string, content)
 
         if (parsed_request[constants.FILE_SIZE_KEY] > 0) and \
                 (parsed_request[constants.PARAMETERS_KEY][constants.METHOD_KEY] == constants.UPLOAD):
@@ -47,6 +55,12 @@ def launch():
 
             message_parser.save_file_to_server(full_message, file)
 
+        # send response_string and content
+
+        response_string = cast_bytes(response_string)
+        content = cast_bytes(content)
+        connection_socket.send(response_string)
+        connection_socket.send(content)
         connection_socket.close()
 
 
@@ -55,7 +69,8 @@ def receive_message(connection_socket):
     message_size = connection_socket.recv(MESSAGE_SIZE_CRLF_LENGTH)  # message size + CRLF
     message = connection_socket.recv(int(message_size.decode()))  # receive the rest of the message
 
-    return checksum + message_size + message, checksum.decode()[:-2].encode(), message_size + message  # message that was sent
+    return checksum + message_size + message, checksum.decode()[
+                                              :-2].encode(), message_size + message  # message that was sent
 
 
 def is_correct_checksum(checksum: bytes, message_no_checksum: bytes) -> bool:
@@ -68,3 +83,12 @@ if __name__ == '__main__':
     database.connect()
     launch()
     database.disconnect()
+
+
+def cast_bytes(content) -> bytes:
+    if isinstance(content, str):
+        return content.encode()
+    elif isinstance(content, bytes):
+        return content
+    else:
+        raise TypeError('The content must be bytes or string. Received', type(content))

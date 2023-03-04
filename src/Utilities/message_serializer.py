@@ -1,10 +1,9 @@
 """
 File containing functions to build a response message
 """
-from codes import *
-from checksum_utility import generate_checksum
-from constants import *
-
+from Utilities.codes import *
+from Utilities.checksum_utility import generate_checksum
+from Utilities.constants import *
 
 def build_response_string(status: Status, access_key=None, file_size: int = None) -> str:
     """
