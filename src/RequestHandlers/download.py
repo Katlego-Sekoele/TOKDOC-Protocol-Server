@@ -76,6 +76,8 @@ def send(message, serverSocket):
 
         file.close()
     elif valid:
-        message = m_builder.build_response_bytes(codes.INCORRECT_CREDENTIALS, None, None)
+        message = m_builder.build_response_bytes(codes.ACCESS_DENIED, None, None)
         serverSocket.send(message)
     else:
+        message = m_builder.build_response_bytes(codes.FILE_NOT_FOUND, None, None)
+        serverSocket.send(message)

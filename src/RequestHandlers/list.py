@@ -1,13 +1,14 @@
 """
  listing all the available files
 """
-from Utilities import database_manager as database
+from src.Utilities import database_manager as database
+from src.Utilities import message_parse as m_breaker
 
 
-def return_list(email: str) -> list[dict]:
+def return_list(message) -> list[dict]:
     """
     A method that will return a list of files that are public or that the user owns
-    :param email:
+    :param
     :return: dict -> {
         'resource_id': int,
         'type': str,
@@ -17,9 +18,10 @@ def return_list(email: str) -> list[dict]:
         'public': bool
     }
     """
-
+    message = m_breaker.get_message_string(message)
+    id = m_breaker.get_headers(message)['USER']
     users_query = "SELECT * FROM Users WHERE email = %s"
-    users_parameters = (email,)
+    users_parameters = (id,)
     users: list[dict] = database.query(users_query, users_parameters)
 
     if len(users) == 0:
