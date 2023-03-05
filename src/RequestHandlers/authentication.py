@@ -13,14 +13,16 @@ def response(email: str, password: str) -> tuple:
 
     authenticated = check_user(email, password) # authenticate or register user result
     files_string = ''
+    access_key = 'null'
 
     code = None
     if authenticated:
         code = codes.SUCCESS
+        access_key = generate_access_key_decoded(email)
     else:
         code = codes.INCORRECT_CREDENTIALS
 
-    response_string = message_serializer.build_response_string(code, access_key=generate_access_key_decoded(email))
+    response_string = message_serializer.build_response_string(code, access_key=access_key)
     return response_string, files_string.strip('\r\n')
 
 

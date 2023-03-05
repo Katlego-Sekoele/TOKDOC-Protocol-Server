@@ -19,6 +19,14 @@ MESSAGE_SIZE_CRLF_LENGTH = 18
 DEFAULT_BUFFER = 1024
 
 
+def send_error_response(connection_socket: socket, code: codes.Status):
+    response_string = message_serializer.build_response_string(code, file_size=0)
+    response_string = cast_bytes(response_string)
+    content = cast_bytes('')
+    connection_socket.send(response_string)
+    connection_socket.send(content)
+
+
 def cast_bytes(content) -> bytes:
     if isinstance(content, str):
         return content.encode()
@@ -50,29 +58,23 @@ def launch():
 
             response_string = ''
             content = b''
+            is_error = False
 
             if not is_correct_checksum(checksum, message_no_checksum):
                 # message was changed during transmission
-                response_string = message_serializer.build_response_string(codes.MESSAGE_CORRUPTED, file_size=0)
-                response_string = cast_bytes(response_string)
-                content = cast_bytes(content)
-                connection_socket.send(response_string)
-                connection_socket.send(content)
-                connection_socket.close()
-                continue
+                send_error_response(connection_socket, codes.MESSAGE_CORRUPTED)
+                is_error = False
+
 
             try:
                 parsed_request = message_parser.parse_message(full_message)  # parse the message
             except:
                 # message was incorrectly formatted
-                response_string = message_serializer.build_response_string(codes.INVALID_FORMAT, file_size=0)
-                response_string = cast_bytes(response_string)
-                content = cast_bytes(content)
-                connection_socket.send(response_string)
-                connection_socket.send(content)
-                connection_socket.close()
-                continue
+                send_error_response(connection_socket, codes.INVALID_FORMAT)
+                is_error = True
 
+
+            # public endpoint AUTH
             try:
                 if parsed_request[constants.PARAMETERS_KEY][constants.METHOD_KEY] == constants.AUTH:
                     email = parsed_request[constants.PARAMETERS_KEY][constants.AUTH_EMAIL_KEY]
@@ -81,16 +83,37 @@ def launch():
             except:
                 # key probably doesn't exist
                 # TODO: find exception name, and send appropriate response
+                is_error = True
                 pass
+
+            # protected endpoints LIST, UPLOAD, DOWNLOAD
+            method = parsed_request[constants.PARAMETERS_KEY][constants.METHOD_KEY]
+            if method != constants.EXIT and method != constants.AUTH:
+                if constants.ACCESS_KEY not in parsed_request[constants.HEADERS]:
+                    send_error_response(connection_socket, codes.ACCESS_DENIED)
+                    is_error = True
+
+                elif constants.ACCESS_KEY in parsed_request[constants.HEADERS]:
+                    access_key = parsed_request[constants.HEADERS][constants.ACCESS_KEY]
+                    email = parsed_request[constants.HEADERS][constants.USER]
+                    if AuthRequestHandler.generate_access_key_decoded(email) != access_key:
+                        send_error_response(connection_socket, codes.ACCESS_DENIED)
+                        is_error = True
+
 
             try:
                 if parsed_request[constants.PARAMETERS_KEY][constants.METHOD_KEY] == constants.LIST:
                     email = parsed_request[constants.HEADERS][constants.USER]
-                    access_key = parsed_request[constants.HEADERS][constants.ACCESS_KEY]
+                    access_key = None
+                    if not is_error:
+                        access_key = parsed_request[constants.HEADERS][constants.ACCESS_KEY]
                     response_string, content = ListRequestHandler.response(email, access_key)
+                    if is_error:
+                        content = b''
             except FileNotFoundError:
                 # key probably doesn't exist
                 # TODO: find exception name, and send appropriate response
+                is_error = True
                 pass
 
             try:
@@ -105,6 +128,8 @@ def launch():
                     # email = parsed_request[constants.HEADERS][constants.USER]
                     # access_key = parsed_request[constants.HEADERS][constants.ACCESS_KEY]
                     response_string, content = UploadRequestHandler.response(full_message.decode(), file)
+                    if is_error:
+                        content = b''
             except Exception as e:
                 # key probably doesn't exist
                 # TODO: find exception name, and send appropriate response
@@ -112,11 +137,11 @@ def launch():
 
             try:
                 if parsed_request[constants.PARAMETERS_KEY][constants.METHOD_KEY] == constants.DOWNLOAD:
-
                     email = parsed_request[constants.HEADERS][constants.USER]
-                    access_key = parsed_request[constants.HEADERS][constants.ACCESS_KEY]
                     file_name = parsed_request[constants.PARAMETERS_KEY]['file_name']
                     response_string, content = DownloadRequestHandler.response(email, file_name)
+                    if is_error:
+                        content = b''
             except Exception as e:
                 raise e
                 # key probably doesn't exist
@@ -126,8 +151,7 @@ def launch():
             # send response_string and content
 
             try:
-                print(parsed_request)
-                if parsed_request[constants.PARAMETERS_KEY][constants.METHOD_KEY] == constants.EXIT:
+                if parsed_request[constants.PARAMETERS_KEY][constants.METHOD_KEY] == constants.EXIT and not is_error:
                     response_string, content = ExitRequestHandler.response()
                     print('Disconnecting from:', client_address)
                     response_string = cast_bytes(response_string)
@@ -142,10 +166,11 @@ def launch():
                 # TODO: find exception name, and send appropriate response
                 pass
 
-            response_string = cast_bytes(response_string)
-            content = cast_bytes(content)
-            connection_socket.send(response_string)
-            connection_socket.send(content)
+            if not is_error:
+                response_string = cast_bytes(response_string)
+                content = cast_bytes(content)
+                connection_socket.send(response_string)
+                connection_socket.send(content)
 
 
 def receive_message(connection_socket):
