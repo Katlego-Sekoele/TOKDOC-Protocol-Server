@@ -29,7 +29,7 @@ def register_user(email, password):
     done = False
 
     # sql command
-    command = "INSERT INTO users (email, password) VALUES (%s, %s)"
+    command = "INSERT INTO Users (email, password) VALUES (%s, %s)"
     creds = (email, password)
     database.query(command, creds)
     done = True
@@ -42,13 +42,13 @@ def check_user(email, password) -> bool:
     found = False
 
     #  check user_exists
-    command_find_user = "SELECT email FROM users WHERE email = %s"
+    command_find_user = "SELECT email FROM Users WHERE email = %s"
     creds_find_user = (email,)
     result_find_user = database.query(command_find_user, creds_find_user)
     if len(result_find_user) > 0:
         # user found, check credentials
         # sql command
-        command_check_credentials = "SELECT email FROM users WHERE email = %s AND password = %s"
+        command_check_credentials = "SELECT email FROM Users WHERE email = %s AND password = %s"
         creds_check_credentials = (email, password)
         result = database.query(command_check_credentials, creds_check_credentials)
 

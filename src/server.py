@@ -70,7 +70,7 @@ def launch():
             continue
 
         try:
-            if parsed_request[constants.PARAMETERS_KEY][constants.METHOD_GROUP_KEY] == constants.AUTH:
+            if parsed_request[constants.PARAMETERS_KEY][constants.METHOD_KEY] == constants.AUTH:
                 email = parsed_request[constants.PARAMETERS_KEY][constants.AUTH_EMAIL_KEY]
                 password = parsed_request[constants.PARAMETERS_KEY][constants.AUTH_PASSWORD_KEY]
                 response_string, content = AuthRequestHandler.response(email, password)
