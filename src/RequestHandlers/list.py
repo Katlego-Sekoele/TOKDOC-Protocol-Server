@@ -16,8 +16,10 @@ def response(email: str, access_key=None) -> tuple:
     code = None
     if len(files_string) > 0:
         code = codes.SUCCESS
+    else:
+        code = codes.NO_FILES_FOUND
 
-    response_string = message_serializer.build_response_string(code, access_key, len(files_string))
+    response_string = message_serializer.build_response_string(code, file_size=len(files_string))
     return response_string, files_string.strip('\r\n')
 
 

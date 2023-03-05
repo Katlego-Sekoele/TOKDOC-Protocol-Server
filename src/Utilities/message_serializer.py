@@ -24,7 +24,7 @@ def build_response_string(status: Status, access_key=None, file_size: int = None
     if access_key:
         message += SPACE + access_key
 
-    if file_size:
+    if file_size is not None:
         message += SPACE + str(file_size)
 
     message += (

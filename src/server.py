@@ -41,6 +41,7 @@ def launch():
 
     while True:
         connection_socket, client_address = server_socket.accept()
+        print('Connecting to:', client_address)
 
         full_message, checksum, message_no_checksum = receive_message(connection_socket)
 
@@ -124,6 +125,7 @@ def launch():
         content = cast_bytes(content)
         connection_socket.send(response_string)
         connection_socket.send(content)
+        print('Disconnecting from:', client_address)
         connection_socket.close()
 
 

@@ -6,41 +6,54 @@ import os
 from dotenv import load_dotenv
 from mysql.connector import Error
 import mysql.connector
+import sqlite3
 
 connection = None
+cursor = None
 
 
 def connect():
-    """"
+    """
     Initiates a connection to the database.
     Should be called on server startup.
     """
     load_dotenv()
-    global connection
+    global connection, cursor
 
     if connection:
         print('A connection to the database has already been established')
         return
 
-    connection = mysql.connector.connect(
-        host=os.getenv("HOST"),
-        database=os.getenv("DATABASE"),
-        user=os.getenv("USERNAME"),
-        password=os.getenv("PASSWORD"),
-        ssl_ca=os.getenv("SSL_CERT")
-    )
+    connection = sqlite3.connect('database.db')
+    print(connection)
+    cursor = connection.cursor()
+#     print(cursor.execute('''SELECT
+#     name
+# FROM
+#     sqlite_schema
+# WHERE
+#     type ='table' AND
+#     name NOT LIKE 'sqlite_%';''').fetchall())
 
-    try:
-        if connection.is_connected():
-            cursor = connection.cursor()
-        cursor.execute("select @@version ")
-        version = cursor.fetchone()
-        if version:
-            print('Running version: ', version)
-        else:
-            print('Not connected.')
-    except Error as e:
-        raise Exception("Error while connecting to MySQL", e)
+    # connection = mysql.connector.connect(
+    #     host=os.getenv("HOST"),
+    #     database=os.getenv("DATABASE"),
+    #     user=os.getenv("USERNAME"),
+    #     password=os.getenv("PASSWORD"),
+    #     ssl_ca=os.getenv("SSL_CERT")
+    # )
+    #
+    # try:
+    #     if connection.is_connected():
+    #         cursor = connection.cursor()
+    #     cursor.execute("select @@version ")
+    #     version = cursor.fetchone()
+    #     if version:
+    #         print('Running version: ', version)
+    #     else:
+    #         print('Not connected.')
+    # except Error as e:
+    #     raise Exception("Error while connecting to MySQL", e)
 
 
 def query(query_template, query_values=None) -> list[dict]:
@@ -52,8 +65,9 @@ def query(query_template, query_values=None) -> list[dict]:
     :return: An array of dictionaries representing the rows returned from the query.
     """
     # get cursor
-    cursor = connection.cursor()
+    #cursor = connection.cursor()
     # execute query
+    query_template = str(query_template).replace('%s', '?')
     cursor.execute(query_template, query_values)
     # get rows
     result_rows = cursor.fetchall()
