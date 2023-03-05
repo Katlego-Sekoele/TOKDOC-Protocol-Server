@@ -102,7 +102,7 @@ def launch():
                 # email = parsed_request[constants.HEADERS][constants.USER]
                 # access_key = parsed_request[constants.HEADERS][constants.ACCESS_KEY]
                 response_string, content = UploadRequestHandler.response(full_message.decode(), file)
-        except:
+        except Exception as e:
             # key probably doesn't exist
             # TODO: find exception name, and send appropriate response
             pass
@@ -112,9 +112,10 @@ def launch():
 
                 email = parsed_request[constants.HEADERS][constants.USER]
                 access_key = parsed_request[constants.HEADERS][constants.ACCESS_KEY]
-                file_name = parsed_request[constants.PARAMETERS_KEY]['filename']
+                file_name = parsed_request[constants.PARAMETERS_KEY]['file_name']
                 response_string, content = DownloadRequestHandler.response(email, file_name)
-        except:
+        except Exception as e:
+            raise e
             # key probably doesn't exist
             # TODO: find exception name, and send appropriate response
             pass

@@ -24,7 +24,7 @@ def connect():
         print('A connection to the database has already been established')
         return
 
-    connection = sqlite3.connect('database.db')
+    connection = sqlite3.connect('mock_database.db')
     print(connection)
     cursor = connection.cursor()
 #     print(cursor.execute('''SELECT
@@ -72,7 +72,10 @@ def query(query_template, query_values=None) -> list[dict]:
     # get rows
     result_rows = cursor.fetchall()
     # get field names
-    field_names = [i[0] for i in cursor.description]
+    try:
+        field_names = [i[0] for i in cursor.description]
+    except TypeError:
+        return []
 
     # map field names to value in dictionary
     entry = dict()

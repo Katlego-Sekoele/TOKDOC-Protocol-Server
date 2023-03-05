@@ -13,14 +13,14 @@ def response(email, filename):
     response_string = ''
     file_bytes = b''
     code = codes.SUCCESS
+    file_size = 0
 
     if not valid_filename(filename):
         code = codes.FILE_NOT_FOUND
+    elif not is_public(filename) and not has_access(filename, email):
+        code = codes.ACCESS_DENIED
     else:
-        if not is_public(filename) or not has_access():
-            code = codes.ACCESS_DENIED
-        else:
-            file_bytes, file_size = send()
+        file_bytes, file_size = send(filename)
 
     response_string = m_builder.build_response_string(code, file_size=file_size)
     return response_string, file_bytes
@@ -31,7 +31,7 @@ def response(email, filename):
 def valid_filename(filename):
     valid = False
     query = "SELECT resource_path FROM resources WHERE resource_path = %s"
-    results = database.query(query, filename)
+    results = database.query(query, (filename,))
 
     file_exists = results
 
@@ -44,11 +44,10 @@ def valid_filename(filename):
 # this method works when valid_filename is true
 def is_public(filename):
     public = False
-    query = "SELECT public FROM Recourses WHERE resource_path = %s"
-    access = database.query(query, filename)
+    query = "SELECT public FROM Resources WHERE resource_path = %s"
+    access = database.query(query, (filename,))
 
-    if access == 1:
-        public = True
+    public = access[0]['public'] == 1
 
     return public
 
@@ -56,20 +55,19 @@ def is_public(filename):
 # checks if an access ID exists for the client
 def has_access(filename, email):
     access = False
-    query = "SELECT resource_id FROM resources where resource_path = %s"
+    query = "SELECT resource_id FROM Resources where resource_path = %s"
 
-    resource_id = database.query(query, filename)[0]
+    resource_id = database.query(query, (filename,))[0]['resource_id']
 
-    query = "SELECT user_id FROM resources where email = %s"
-    user_id = database.query(query, email)[0]
+    query = "SELECT user_id FROM Users where email = %s"
+    user_id = database.query(query, (email,))[0]['user_id']
 
-    query = "SELECT access_id FROM Access where user_id=%s AND resource_id=%s"
-    info = (user_id, resource_id)
+    query = "SELECT access_id FROM Access where user_id=%s AND file_id=%s"
+    info = (int(user_id), int(resource_id))
 
     key = database.query(query, info)
 
-    if key is not None:
-        access = True
+    access = len(key) > 0
 
     return access
 

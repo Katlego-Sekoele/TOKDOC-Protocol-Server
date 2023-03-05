@@ -49,7 +49,7 @@ def save_filename_to_db(filename, owner_email, authorized=None):
     user_id = get_user_id(owner_email)
 
     command = 'INSERT INTO Resources (type, resource_path, upload_date, user_id, public) VALUES (%s, %s, %s, %s, %s)'
-    cred = (file_type, filename, datetime.now, user_id, authorized is None)
+    cred = (file_type, filename, datetime.now(), user_id, authorized is None)
     result = database.query(command, cred)
 
     if authorized:
@@ -62,7 +62,7 @@ def save_filename_to_db(filename, owner_email, authorized=None):
             access_user_id = get_user_id(email)
             access_query = 'INSERT INTO Access (user_id, file_id) VALUES (%s, %s)'
             access_params = (access_user_id, file_id)
-            access_result = database.query(access_query)
+            access_result = database.query(access_query, access_params)
 
 
 def get_user_id(email: str):
