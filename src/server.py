@@ -6,6 +6,7 @@ from RequestHandlers import list as ListRequestHandler
 from RequestHandlers import authentication as AuthRequestHandler
 from RequestHandlers import upload as UploadRequestHandler
 from RequestHandlers import download as DownloadRequestHandler
+from RequestHandlers import exit as ExitRequestHandler
 from Utilities import message_parser
 from Utilities import message_serializer
 from Utilities import constants
@@ -41,93 +42,110 @@ def launch():
 
     while True:
         connection_socket, client_address = server_socket.accept()
+        connected = True
         print('Connecting to:', client_address)
 
-        full_message, checksum, message_no_checksum = receive_message(connection_socket)
+        while connected:
+            full_message, checksum, message_no_checksum = receive_message(connection_socket)
 
-        response_string = ''
-        content = b''
+            response_string = ''
+            content = b''
 
-        if not is_correct_checksum(checksum, message_no_checksum):
-            # message was changed during transmission
-            response_string = message_serializer.build_response_string(codes.MESSAGE_CORRUPTED, file_size=0)
+            if not is_correct_checksum(checksum, message_no_checksum):
+                # message was changed during transmission
+                response_string = message_serializer.build_response_string(codes.MESSAGE_CORRUPTED, file_size=0)
+                response_string = cast_bytes(response_string)
+                content = cast_bytes(content)
+                connection_socket.send(response_string)
+                connection_socket.send(content)
+                connection_socket.close()
+                continue
+
+            try:
+                parsed_request = message_parser.parse_message(full_message)  # parse the message
+            except:
+                # message was incorrectly formatted
+                response_string = message_serializer.build_response_string(codes.INVALID_FORMAT, file_size=0)
+                response_string = cast_bytes(response_string)
+                content = cast_bytes(content)
+                connection_socket.send(response_string)
+                connection_socket.send(content)
+                connection_socket.close()
+                continue
+
+            try:
+                if parsed_request[constants.PARAMETERS_KEY][constants.METHOD_KEY] == constants.AUTH:
+                    email = parsed_request[constants.PARAMETERS_KEY][constants.AUTH_EMAIL_KEY]
+                    password = parsed_request[constants.PARAMETERS_KEY][constants.AUTH_PASSWORD_KEY]
+                    response_string, content = AuthRequestHandler.response(email, password)
+            except:
+                # key probably doesn't exist
+                # TODO: find exception name, and send appropriate response
+                pass
+
+            try:
+                if parsed_request[constants.PARAMETERS_KEY][constants.METHOD_KEY] == constants.LIST:
+                    email = parsed_request[constants.HEADERS][constants.USER]
+                    access_key = parsed_request[constants.HEADERS][constants.ACCESS_KEY]
+                    response_string, content = ListRequestHandler.response(email, access_key)
+            except FileNotFoundError:
+                # key probably doesn't exist
+                # TODO: find exception name, and send appropriate response
+                pass
+
+            try:
+                if (parsed_request[constants.PARAMETERS_KEY][constants.METHOD_KEY] == constants.UPLOAD) and \
+                        (parsed_request[constants.FILE_SIZE_KEY] > 0):
+
+                    file = b''
+
+                    while len(file) < parsed_request[constants.FILE_SIZE_KEY]:
+                        file += connection_socket.recv(DEFAULT_BUFFER)
+
+                    # email = parsed_request[constants.HEADERS][constants.USER]
+                    # access_key = parsed_request[constants.HEADERS][constants.ACCESS_KEY]
+                    response_string, content = UploadRequestHandler.response(full_message.decode(), file)
+            except Exception as e:
+                # key probably doesn't exist
+                # TODO: find exception name, and send appropriate response
+                pass
+
+            try:
+                if parsed_request[constants.PARAMETERS_KEY][constants.METHOD_KEY] == constants.DOWNLOAD:
+
+                    email = parsed_request[constants.HEADERS][constants.USER]
+                    access_key = parsed_request[constants.HEADERS][constants.ACCESS_KEY]
+                    file_name = parsed_request[constants.PARAMETERS_KEY]['file_name']
+                    response_string, content = DownloadRequestHandler.response(email, file_name)
+            except Exception as e:
+                raise e
+                # key probably doesn't exist
+                # TODO: find exception name, and send appropriate response
+                pass
+
+            # send response_string and content
+
+            try:
+                print(parsed_request)
+                if parsed_request[constants.PARAMETERS_KEY][constants.METHOD_KEY] == constants.EXIT:
+                    response_string, content = ExitRequestHandler.response()
+                    print('Disconnecting from:', client_address)
+                    response_string = cast_bytes(response_string)
+                    content = cast_bytes(content)
+                    connection_socket.send(response_string)
+                    connection_socket.send(content)
+                    connection_socket.close()
+                    connected = False
+                    continue
+            except:
+                # key probably doesn't exist
+                # TODO: find exception name, and send appropriate response
+                pass
+
             response_string = cast_bytes(response_string)
             content = cast_bytes(content)
             connection_socket.send(response_string)
             connection_socket.send(content)
-            connection_socket.close()
-            continue
-
-        try:
-            parsed_request = message_parser.parse_message(full_message)  # parse the message
-        except:
-            # message was incorrectly formatted
-            response_string = message_serializer.build_response_string(codes.INVALID_FORMAT, file_size=0)
-            response_string = cast_bytes(response_string)
-            content = cast_bytes(content)
-            connection_socket.send(response_string)
-            connection_socket.send(content)
-            connection_socket.close()
-            continue
-
-        try:
-            if parsed_request[constants.PARAMETERS_KEY][constants.METHOD_KEY] == constants.AUTH:
-                email = parsed_request[constants.PARAMETERS_KEY][constants.AUTH_EMAIL_KEY]
-                password = parsed_request[constants.PARAMETERS_KEY][constants.AUTH_PASSWORD_KEY]
-                response_string, content = AuthRequestHandler.response(email, password)
-        except:
-            # key probably doesn't exist
-            # TODO: find exception name, and send appropriate response
-            pass
-
-        try:
-            if parsed_request[constants.PARAMETERS_KEY][constants.METHOD_KEY] == constants.LIST:
-                email = parsed_request[constants.HEADERS][constants.USER]
-                access_key = parsed_request[constants.HEADERS][constants.ACCESS_KEY]
-                response_string, content = ListRequestHandler.response(email, access_key)
-        except FileNotFoundError:
-            # key probably doesn't exist
-            # TODO: find exception name, and send appropriate response
-            pass
-
-        try:
-            if (parsed_request[constants.PARAMETERS_KEY][constants.METHOD_KEY] == constants.UPLOAD) and \
-                    (parsed_request[constants.FILE_SIZE_KEY] > 0):
-
-                file = b''
-
-                while len(file) < parsed_request[constants.FILE_SIZE_KEY]:
-                    file += connection_socket.recv(DEFAULT_BUFFER)
-
-                # email = parsed_request[constants.HEADERS][constants.USER]
-                # access_key = parsed_request[constants.HEADERS][constants.ACCESS_KEY]
-                response_string, content = UploadRequestHandler.response(full_message.decode(), file)
-        except Exception as e:
-            # key probably doesn't exist
-            # TODO: find exception name, and send appropriate response
-            pass
-
-        try:
-            if parsed_request[constants.PARAMETERS_KEY][constants.METHOD_KEY] == constants.DOWNLOAD:
-
-                email = parsed_request[constants.HEADERS][constants.USER]
-                access_key = parsed_request[constants.HEADERS][constants.ACCESS_KEY]
-                file_name = parsed_request[constants.PARAMETERS_KEY]['file_name']
-                response_string, content = DownloadRequestHandler.response(email, file_name)
-        except Exception as e:
-            raise e
-            # key probably doesn't exist
-            # TODO: find exception name, and send appropriate response
-            pass
-
-        # send response_string and content
-
-        response_string = cast_bytes(response_string)
-        content = cast_bytes(content)
-        connection_socket.send(response_string)
-        connection_socket.send(content)
-        print('Disconnecting from:', client_address)
-        connection_socket.close()
 
 
 def receive_message(connection_socket):

@@ -78,8 +78,8 @@ def parse_message(message) -> dict:
     parsed = {}
 
     method_group_type = get_method_group_type(message)
-    if method_group_type == constants.AUTH:
-        parsed[constants.PARAMETERS_KEY] = get_auth_parameters(message)
+    if method_group_type == constants.AUTH or method_group_type == constants.EXIT:
+        parsed[constants.PARAMETERS_KEY] = get_auth_exit_parameters(message)
     elif method_group_type == constants.DATA:
         parsed[constants.PARAMETERS_KEY] = get_data_parameters(message)
         parsed[constants.HEADERS] = get_headers(message)
@@ -211,7 +211,7 @@ def get_method_content(message) -> str:
     return message_content[start_index: end_index].strip('\r\n')
 
 
-def get_auth_parameters(message) -> dict:
+def get_auth_exit_parameters(message) -> dict:
     """
     :param message:
     :return: dict -> returns a dictionary
@@ -221,13 +221,20 @@ def get_auth_parameters(message) -> dict:
         'password': str
     }
     """
-    if get_method_group_type(message) != constants.AUTH:
-        raise TypeError('The method group type must be "AUTH" to use this function')
+    if get_method_group_type(message) != constants.AUTH and get_method_group_type(message) != constants.EXIT:
+        raise TypeError('The method group type must be "AUTH" or "EXIT" to use this function')
 
     message = get_message_string(message)
     method_content = get_method_content(message)
 
     content_list = str(method_content).split()
+
+    if content_list[0] == constants.EXIT:
+        # exit request
+        return {
+            'method': content_list[0]
+        }
+
     return {
         'method': content_list[0],
         'email': content_list[1],
