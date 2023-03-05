@@ -6,6 +6,7 @@ from RequestHandlers import list as ListRequestHandler
 from RequestHandlers import authentication as AuthRequestHandler
 from RequestHandlers import upload as UploadRequestHandler
 from RequestHandlers import download as DownloadRequestHandler
+from RequestHandlers import exit as ExitRequestHandler
 from Utilities import message_parser
 from Utilities import message_serializer
 from Utilities import constants
@@ -118,6 +119,15 @@ def launch():
             # key probably doesn't exist
             # TODO: find exception name, and send appropriate response
             pass
+        try:
+            if parsed_request[constants.PARAMETERS_KEY][constants.METHOD_KEY] == constants.EXIT:
+                response_string, content = ExitRequestHandler.response()
+                print('Disconnecting from:', client_address)
+                connection_socket.close()
+        except:
+            # key probably doesn't exist
+            # TODO: find exception name, and send appropriate response
+            pass
 
         # send response_string and content
 
@@ -125,8 +135,7 @@ def launch():
         content = cast_bytes(content)
         connection_socket.send(response_string)
         connection_socket.send(content)
-        print('Disconnecting from:', client_address)
-        connection_socket.close()
+
 
 
 def receive_message(connection_socket):
