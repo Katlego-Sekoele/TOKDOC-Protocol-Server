@@ -12,7 +12,7 @@ from Utilities import message_serializer
 from Utilities import constants
 from Utilities import codes
 
-BACKLOG = 4
+BACKLOG = 16
 PORT = 3000
 CHECKSUM_CRLF_LENGTH = 66
 MESSAGE_SIZE_CRLF_LENGTH = 18
@@ -47,6 +47,10 @@ def launch():
     server_socket = socket(AF_INET, SOCK_STREAM)
     server_socket.bind(('', server_port))
     server_socket.listen(BACKLOG)
+
+    print("Server name:", gethostname())
+    print("Server ip:", gethostbyname(gethostname()))
+    print('Server port:', server_port)
 
     while True:
         connection_socket, client_address = server_socket.accept()
