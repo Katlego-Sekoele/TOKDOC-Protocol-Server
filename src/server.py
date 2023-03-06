@@ -72,12 +72,14 @@ def launch():
             try:
                 full_message, checksum, message_no_checksum = receive_message(connection_socket)
             except (ValueError, OSError) as e:
+                print(client_address, 'Error in message retrieval', sep=':\t')
                 send_error_response(connection_socket, codes.INTERNAL_SERVER_ERROR)
                 connected = False
                 is_error = True
 
             if not is_error and not is_correct_checksum(checksum, message_no_checksum):
                 # message was changed during transmission
+                print(client_address, 'Message received incorrectly', sep=':\t')
                 send_error_response(connection_socket, codes.MESSAGE_CORRUPTED)
                 is_error = True
 
@@ -85,6 +87,7 @@ def launch():
                 parsed_request = message_parser.parse_message(full_message)  # parse the message
             except:
                 # message was incorrectly formatted
+                print(client_address, 'Message formatted incorrectly', sep=':\t')
                 send_error_response(connection_socket, codes.INVALID_FORMAT)
                 is_error = True
 
@@ -92,6 +95,7 @@ def launch():
             # public endpoint AUTH
             try:
                 if not is_error and parsed_request[constants.PARAMETERS_KEY][constants.METHOD_KEY] == constants.AUTH:
+                    print(client_address, parsed_request[constants.PARAMETERS_KEY][constants.METHOD_KEY], sep=':\t')
                     email = parsed_request[constants.PARAMETERS_KEY][constants.AUTH_EMAIL_KEY]
                     password = parsed_request[constants.PARAMETERS_KEY][constants.AUTH_PASSWORD_KEY]
                     response_string, content = AuthRequestHandler.response(email, password)
@@ -106,6 +110,7 @@ def launch():
                 method = parsed_request[constants.PARAMETERS_KEY][constants.METHOD_KEY]
             if not is_error and method != constants.EXIT and method != constants.AUTH:
                 if constants.ACCESS_KEY not in parsed_request[constants.HEADERS]:
+                    print(client_address, 'Missing access key', sep=':\t')
                     send_error_response(connection_socket, codes.ACCESS_DENIED)
                     is_error = True
 
@@ -113,12 +118,13 @@ def launch():
                     access_key = parsed_request[constants.HEADERS][constants.ACCESS_KEY]
                     email = parsed_request[constants.HEADERS][constants.USER]
                     if AuthRequestHandler.generate_access_key_decoded(email) != access_key:
+                        print(client_address, 'Incorrect access key', sep=':\t')
                         send_error_response(connection_socket, codes.ACCESS_DENIED)
                         is_error = True
 
-
             try:
                 if not is_error and parsed_request[constants.PARAMETERS_KEY][constants.METHOD_KEY] == constants.LIST:
+                    print(client_address, parsed_request[constants.PARAMETERS_KEY][constants.METHOD_KEY], sep=':\t')
                     email = parsed_request[constants.HEADERS][constants.USER]
                     access_key = None
                     if not is_error:
@@ -136,6 +142,8 @@ def launch():
                 if not is_error and (parsed_request[constants.PARAMETERS_KEY][constants.METHOD_KEY] == constants.UPLOAD) and \
                         (parsed_request[constants.FILE_SIZE_KEY] > 0):
 
+                    print(client_address, parsed_request[constants.PARAMETERS_KEY][constants.METHOD_KEY], sep=':\t')
+
                     file = b''
 
                     while len(file) < parsed_request[constants.FILE_SIZE_KEY]:
@@ -147,6 +155,7 @@ def launch():
                     if is_error:
                         content = b''
             except RuntimeError as e:
+                print(client_address, 'User does not exist', sep=':\t')
                 send_error_response(connection_socket, codes.USER_NOT_EXIST)
                 is_error = True
             except Exception as e:
@@ -157,6 +166,7 @@ def launch():
 
             try:
                 if not is_error and parsed_request[constants.PARAMETERS_KEY][constants.METHOD_KEY] == constants.DOWNLOAD:
+                    print(client_address, parsed_request[constants.PARAMETERS_KEY][constants.METHOD_KEY], sep=':\t')
                     email = parsed_request[constants.HEADERS][constants.USER]
                     file_name = parsed_request[constants.PARAMETERS_KEY]['file_name']
                     response_string, content = DownloadRequestHandler.response(email, file_name)

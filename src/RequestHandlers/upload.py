@@ -30,7 +30,6 @@ def save_file(message, file_bytes):
     file_name = m_breaker.get_data_parameters(message)['file_name']
     email = m_breaker.get_headers(message)[constants.USER]
 
-    print('upload.py 33 saving file')
     try:
         authorized = m_breaker.get_headers(message)[constants.AUTHORIZED]
     except KeyError as e:
