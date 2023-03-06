@@ -1,17 +1,21 @@
-# authenticating user logging in details and signing up users
-# making use of Database and dictionaries
+"""
+authenticating user logging in details and signing up users
+"""
 import hashlib
 import os
-
 from dotenv import load_dotenv
-
 from Utilities import codes, message_serializer
 from Utilities import database_manager as database
 
 
 def response(email: str, password: str) -> tuple:
-
-    authenticated = check_user(email, password) # authenticate or register user result
+    """
+    generates a response message to send back to the client
+    :param email:
+    :param password:
+    :return: (response message, response data)
+    """
+    authenticated = check_user(email, password)  # authenticate or register user result
     files_string = ''
     access_key = 'null'
 
@@ -28,6 +32,12 @@ def response(email: str, password: str) -> tuple:
 
 # register new
 def register_user(email, password):
+    """
+    Registers a user. i.e. adds user information to the database
+    :param email:
+    :param password:
+    :return:
+    """
     done = False
 
     # sql command
@@ -42,6 +52,11 @@ def register_user(email, password):
 
 # check member
 def check_user(email, password) -> bool:
+    """
+    :param email:
+    :param password:
+    :return: True if user exists
+    """
     found = False
 
     #  check user_exists

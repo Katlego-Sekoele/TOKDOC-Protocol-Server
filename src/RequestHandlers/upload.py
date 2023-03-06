@@ -1,6 +1,9 @@
-# receiving a file from client
+"""
+receiving a file from client
+functions to handle the uploading of a file
+from the client to the server
+"""
 from datetime import *
-
 from Utilities import message_serializer
 from Utilities import database_manager as database
 from Utilities import message_parser as m_breaker
@@ -10,6 +13,13 @@ import os
 
 
 def response(message: str, file: bytes, access_key=None) -> tuple:
+    """
+    generates a response message to send back to the client
+    :param message:
+    :param file:
+    :param access_key:
+    :return: (response message, response data)
+    """
     files_string = ''
 
     save_file(message, file)
@@ -33,9 +43,9 @@ def save_file(message, file_bytes):
     try:
         authorized = m_breaker.get_headers(message)[constants.AUTHORIZED]
     except KeyError as e:
+        # file is public
         authorized = None
     except Exception as e:
-        # most likely occured because there is no AUTHORIZED key in the headers
         # TODO: find the exact exception
         raise e
 
@@ -46,6 +56,14 @@ def save_file(message, file_bytes):
 
 
 def save_filename_to_db(filename, owner_email, authorized=None):
+    """
+    Performs appropriate queries to keep track of this file
+    and user that can access it
+    :param filename:
+    :param owner_email:
+    :param authorized:
+    :return: None
+    """
     throwaway, file_type = os.path.splitext(filename)
 
     user_id = get_user_id(owner_email)
@@ -54,7 +72,6 @@ def save_filename_to_db(filename, owner_email, authorized=None):
     cred = (file_type, filename, datetime.now(), user_id, authorized is None)
     result = database.query(command, cred)
     database.commit()
-
 
     if authorized:
         file_command = 'SELECT * FROM Resources WHERE resource_path = %s'
@@ -70,6 +87,11 @@ def save_filename_to_db(filename, owner_email, authorized=None):
 
 
 def get_user_id(email: str):
+    """
+    returns the user's id given their email
+    :param email:
+    :return: user id
+    """
     query = "SELECT * FROM Users WHERE email = %s"
     params = (email,)
     result = database.query(query, params)
@@ -78,4 +100,3 @@ def get_user_id(email: str):
         return result[0]['user_id']
     else:
         raise RuntimeError('User with the specified email,', email, ', not found.')
-

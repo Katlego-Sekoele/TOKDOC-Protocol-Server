@@ -1,5 +1,4 @@
 import hashlib
-
 import Utilities.constants as constants
 from Utilities.message_parser import get_message_string as get_message_string
 

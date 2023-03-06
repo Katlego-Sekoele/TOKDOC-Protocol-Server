@@ -1,15 +1,21 @@
-# sending a file to the client
+"""
+sending a file from client
+functions to handle the downloading of a file
+from the server to the client
+"""
 import os
-from socket import *
-
+from Utilities import codes
 from Utilities import database_manager as database
 from Utilities import message_serializer as m_builder
-from Utilities import message_parser as m_breaker
-from Utilities import codes
 
 
 def response(email, filename):
-
+    """
+    generates a response message to send back to the client
+    :param filename:
+    :param email:
+    :return: (response message, response data)
+    """
     response_string = ''
     file_bytes = b''
     code = codes.SUCCESS
@@ -26,9 +32,13 @@ def response(email, filename):
     return response_string, file_bytes
 
 
-
 # checks if file name entered is valid
 def valid_filename(filename):
+    """
+    Validate that the file exists in the database
+    :param filename:
+    :return:
+    """
     valid = False
     query = "SELECT resource_path FROM resources WHERE resource_path = %s"
     results = database.query(query, (filename,))
@@ -43,6 +53,10 @@ def valid_filename(filename):
 
 # this method works when valid_filename is true
 def is_public(filename):
+    """
+    :param filename:
+    :return: True if the file is public
+    """
     public = False
     query = "SELECT public FROM Resources WHERE resource_path = %s"
     access = database.query(query, (filename,))
@@ -54,6 +68,12 @@ def is_public(filename):
 
 # checks if an access ID exists for the client
 def has_access(filename, email):
+    """
+
+    :param filename:
+    :param email:
+    :return: True if the user has access to this file
+    """
     access = False
     query = "SELECT resource_id FROM Resources where resource_path = %s"
 
@@ -74,7 +94,10 @@ def has_access(filename, email):
 
 # uploading the actual contents of the file to the client :)
 def send(filename):
-
+    """
+    :param filename:
+    :return: (bytes of the file, file size)
+    """
     file = open(filename, "rb")
     file_size = os.path.getsize(filename)
     data = file.read()

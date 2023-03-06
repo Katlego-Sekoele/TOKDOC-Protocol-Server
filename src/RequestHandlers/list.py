@@ -1,13 +1,19 @@
 """
- listing all the available files
+listing all the available files
+functions to handle the listing of accessible files
 """
+from Utilities import codes
 from Utilities import database_manager as database
 from Utilities import message_serializer as message_serializer
-from Utilities import message_parser as m_breaker
-from Utilities import codes
 
 
 def response(email: str, access_key=None) -> tuple:
+    """
+    generates a response message to send back to the client
+    :param email:
+    :param access_key:
+    :return: (response message, list of files)
+    """
     files = return_list(email)
     files_string = ''
     for file in files:
@@ -24,6 +30,11 @@ def response(email: str, access_key=None) -> tuple:
 
 
 def is_public(filename):
+    """
+
+    :param filename:
+    :return: True if the file is public
+    """
     public = False
     query = "SELECT public FROM Resources WHERE resource_path = %s"
     access = database.query(query, (filename,))
@@ -34,6 +45,12 @@ def is_public(filename):
 
 
 def has_access(filename, email):
+    """
+
+    :param filename:
+    :param email:
+    :return: True if the user has access
+    """
     access = False
     query = "SELECT resource_id FROM Resources where resource_path = %s"
 
@@ -50,7 +67,6 @@ def has_access(filename, email):
     access = len(key) > 0
 
     return access
-
 
 
 def return_list(email) -> list[dict]:

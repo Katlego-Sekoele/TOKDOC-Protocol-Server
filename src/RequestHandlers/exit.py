@@ -1,15 +1,13 @@
-# authenticating user logging in details and signing up users
-# making use of Database and dictionaries
-import hashlib
-import os
-
-from dotenv import load_dotenv
-
+"""
+Function to handle an exit request
+"""
 from Utilities import codes, message_serializer
-from Utilities import database_manager as database
 
 
 def response() -> tuple:
-
+    """
+    generates a response message for the exit request
+    :return:
+    """
     response_string = message_serializer.build_response_string(codes.SUCCESS, file_size=0)
     return response_string, ''
