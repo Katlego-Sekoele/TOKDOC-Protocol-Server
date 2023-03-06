@@ -23,6 +23,36 @@ def response(email: str, access_key=None) -> tuple:
     return response_string, files_string.strip('\r\n')
 
 
+def is_public(filename):
+    public = False
+    query = "SELECT public FROM Resources WHERE resource_path = %s"
+    access = database.query(query, (filename,))
+
+    public = access[0]['public'] == 1
+
+    return public
+
+
+def has_access(filename, email):
+    access = False
+    query = "SELECT resource_id FROM Resources where resource_path = %s"
+
+    resource_id = database.query(query, (filename,))[0]['resource_id']
+
+    query = "SELECT user_id FROM Users where email = %s"
+    user_id = database.query(query, (email,))[0]['user_id']
+
+    query = "SELECT access_id FROM Access where user_id=%s AND file_id=%s"
+    info = (int(user_id), int(resource_id))
+
+    key = database.query(query, info)
+
+    access = len(key) > 0
+
+    return access
+
+
+
 def return_list(email) -> list[dict]:
     """
     A method that will return a list of files that are public or that the user owns
@@ -46,13 +76,17 @@ def return_list(email) -> list[dict]:
 
     resources_query = "SELECT * FROM Resources WHERE public = 1"
     if users[0]['user_id']:
-        resources_query = "SELECT * FROM Resources WHERE public = 1 OR user_id = %s"
-        resources_parameters = (users[0]['user_id'],)
-        rows = database.query(resources_query, resources_parameters)
+        resources_query = "SELECT * FROM Resources"
+        # resources_parameters = (users[0]['user_id'],)
+        rows = database.query(resources_query, ())
     else:
         rows = database.query(resources_query)
 
+    list_to_return = []
     for row in rows:
         row['public'] = row['public'] == 1
+        filename = row['resource_path']
+        if is_public(filename) or has_access(filename, email):
+            list_to_return.append(row)
 
-    return rows
+    return list_to_return

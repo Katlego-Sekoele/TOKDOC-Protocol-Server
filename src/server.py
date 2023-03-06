@@ -23,9 +23,15 @@ def send_error_response(connection_socket: socket, code: codes.Status):
     response_string = message_serializer.build_response_string(code, file_size=0)
     response_string = cast_bytes(response_string)
     content = cast_bytes('')
-    connection_socket.send(response_string)
-    connection_socket.send(content)
-
+    try:
+        connection_socket.send(response_string)
+        connection_socket.send(content)
+    except ConnectionAbortedError as e:
+        print('Disconnecting aborted socket')
+        connection_socket.close()
+    except OSError as e:
+        print('Disconnecting aborted socket')
+        connection_socket = None
 
 def cast_bytes(content) -> bytes:
     if isinstance(content, str):
@@ -58,17 +64,22 @@ def launch():
         print('Connecting to:', client_address)
 
         while connected:
-            full_message, checksum, message_no_checksum = receive_message(connection_socket)
 
             response_string = ''
             content = b''
             is_error = False
 
-            if not is_correct_checksum(checksum, message_no_checksum):
+            try:
+                full_message, checksum, message_no_checksum = receive_message(connection_socket)
+            except (ValueError, OSError) as e:
+                send_error_response(connection_socket, codes.INTERNAL_SERVER_ERROR)
+                connected = False
+                is_error = True
+
+            if not is_error and not is_correct_checksum(checksum, message_no_checksum):
                 # message was changed during transmission
                 send_error_response(connection_socket, codes.MESSAGE_CORRUPTED)
-                is_error = False
-
+                is_error = True
 
             try:
                 parsed_request = message_parser.parse_message(full_message)  # parse the message
@@ -80,7 +91,7 @@ def launch():
 
             # public endpoint AUTH
             try:
-                if parsed_request[constants.PARAMETERS_KEY][constants.METHOD_KEY] == constants.AUTH:
+                if not is_error and parsed_request[constants.PARAMETERS_KEY][constants.METHOD_KEY] == constants.AUTH:
                     email = parsed_request[constants.PARAMETERS_KEY][constants.AUTH_EMAIL_KEY]
                     password = parsed_request[constants.PARAMETERS_KEY][constants.AUTH_PASSWORD_KEY]
                     response_string, content = AuthRequestHandler.response(email, password)
@@ -91,8 +102,9 @@ def launch():
                 pass
 
             # protected endpoints LIST, UPLOAD, DOWNLOAD
-            method = parsed_request[constants.PARAMETERS_KEY][constants.METHOD_KEY]
-            if method != constants.EXIT and method != constants.AUTH:
+            if not is_error:
+                method = parsed_request[constants.PARAMETERS_KEY][constants.METHOD_KEY]
+            if not is_error and method != constants.EXIT and method != constants.AUTH:
                 if constants.ACCESS_KEY not in parsed_request[constants.HEADERS]:
                     send_error_response(connection_socket, codes.ACCESS_DENIED)
                     is_error = True
@@ -106,7 +118,7 @@ def launch():
 
 
             try:
-                if parsed_request[constants.PARAMETERS_KEY][constants.METHOD_KEY] == constants.LIST:
+                if not is_error and parsed_request[constants.PARAMETERS_KEY][constants.METHOD_KEY] == constants.LIST:
                     email = parsed_request[constants.HEADERS][constants.USER]
                     access_key = None
                     if not is_error:
@@ -121,7 +133,7 @@ def launch():
                 pass
 
             try:
-                if (parsed_request[constants.PARAMETERS_KEY][constants.METHOD_KEY] == constants.UPLOAD) and \
+                if not is_error and (parsed_request[constants.PARAMETERS_KEY][constants.METHOD_KEY] == constants.UPLOAD) and \
                         (parsed_request[constants.FILE_SIZE_KEY] > 0):
 
                     file = b''
@@ -140,7 +152,7 @@ def launch():
                 pass
 
             try:
-                if parsed_request[constants.PARAMETERS_KEY][constants.METHOD_KEY] == constants.DOWNLOAD:
+                if not is_error and parsed_request[constants.PARAMETERS_KEY][constants.METHOD_KEY] == constants.DOWNLOAD:
                     email = parsed_request[constants.HEADERS][constants.USER]
                     file_name = parsed_request[constants.PARAMETERS_KEY]['file_name']
                     response_string, content = DownloadRequestHandler.response(email, file_name)
@@ -155,7 +167,7 @@ def launch():
             # send response_string and content
 
             try:
-                if parsed_request[constants.PARAMETERS_KEY][constants.METHOD_KEY] == constants.EXIT and not is_error:
+                if not is_error and parsed_request[constants.PARAMETERS_KEY][constants.METHOD_KEY] == constants.EXIT and not is_error:
                     response_string, content = ExitRequestHandler.response()
                     print('Disconnecting from:', client_address)
                     response_string = cast_bytes(response_string)
