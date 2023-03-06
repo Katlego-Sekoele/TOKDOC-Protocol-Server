@@ -146,7 +146,11 @@ def launch():
                     response_string, content = UploadRequestHandler.response(full_message.decode(), file)
                     if is_error:
                         content = b''
+            except RuntimeError as e:
+                send_error_response(connection_socket, codes.USER_NOT_EXIST)
+                is_error = True
             except Exception as e:
+                raise e
                 # key probably doesn't exist
                 # TODO: find exception name, and send appropriate response
                 pass

@@ -34,6 +34,7 @@ def register_user(email, password):
     command = "INSERT INTO Users (email, password) VALUES (%s, %s)"
     creds = (email, password)
     database.query(command, creds)
+    database.commit()
     done = True
 
     return done

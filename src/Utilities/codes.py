@@ -21,3 +21,4 @@ ACCESS_DENIED = Status(**{'code': 302, 'status': 'Access denied'}) #ACCESS_DENIE
 INTERNAL_SERVER_ERROR = Status(**{'code': 500, 'status': 'Internal Server Error'})
 EXITING_AUTHORIZED = Status(**{'code': 201, 'status': 'Exiting authorized'})
 INVALID_FORMAT = Status(**{'code': 504, 'status': 'Invalid format'})
+USER_NOT_EXIST = Status(**{'code': 505, 'status': 'User does not exist'})

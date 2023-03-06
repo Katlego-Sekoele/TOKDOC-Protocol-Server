@@ -30,12 +30,15 @@ def save_file(message, file_bytes):
     file_name = m_breaker.get_data_parameters(message)['file_name']
     email = m_breaker.get_headers(message)[constants.USER]
 
+    print('upload.py 33 saving file')
     try:
         authorized = m_breaker.get_headers(message)[constants.AUTHORIZED]
-    except:
+    except KeyError as e:
+        authorized = None
+    except Exception as e:
         # most likely occured because there is no AUTHORIZED key in the headers
         # TODO: find the exact exception
-        authorized = None
+        raise e
 
     file = open(file_name, 'wb')
     file.write(file_bytes)
@@ -51,9 +54,10 @@ def save_filename_to_db(filename, owner_email, authorized=None):
     command = 'INSERT INTO Resources (type, resource_path, upload_date, user_id, public) VALUES (%s, %s, %s, %s, %s)'
     cred = (file_type, filename, datetime.now(), user_id, authorized is None)
     result = database.query(command, cred)
+    database.commit()
+
 
     if authorized:
-
         file_command = 'SELECT * FROM Resources WHERE resource_path = %s'
         file_params = (filename,)
         file_id = database.query(file_command, file_params)[0]['resource_id']
@@ -63,6 +67,7 @@ def save_filename_to_db(filename, owner_email, authorized=None):
             access_query = 'INSERT INTO Access (user_id, file_id) VALUES (%s, %s)'
             access_params = (access_user_id, file_id)
             access_result = database.query(access_query, access_params)
+            database.commit()
 
 
 def get_user_id(email: str):

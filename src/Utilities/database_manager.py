@@ -24,7 +24,7 @@ def connect():
         print('A connection to the database has already been established')
         return
 
-    connection = sqlite3.connect('mock_database.db')
+    connection = sqlite3.connect('database.db')
     print(connection)
     cursor = connection.cursor()
 #     print(cursor.execute('''SELECT
@@ -89,6 +89,11 @@ def query(query_template, query_values=None) -> list[dict]:
         results.append(entry)
 
     return results
+
+
+def commit():
+    if connection is not None:
+        connection.commit()
 
 
 def disconnect():

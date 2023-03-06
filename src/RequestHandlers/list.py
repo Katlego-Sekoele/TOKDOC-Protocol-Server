@@ -86,7 +86,7 @@ def return_list(email) -> list[dict]:
     for row in rows:
         row['public'] = row['public'] == 1
         filename = row['resource_path']
-        if is_public(filename) or has_access(filename, email):
+        if row not in list_to_return and (is_public(filename) or has_access(filename, email)):
             list_to_return.append(row)
 
     return list_to_return
