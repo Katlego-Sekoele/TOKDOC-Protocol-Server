@@ -19,7 +19,8 @@ PORT = 3000
 CHECKSUM_CRLF_LENGTH = 66
 MESSAGE_SIZE_CRLF_LENGTH = 18
 DEFAULT_BUFFER = 1024
-DEFAULT_TIMEOUT = 60
+DEFAULT_TIMEOUT = 120
+
 
 def handle_client(connection_socket, client_address):
     connected = True
