@@ -45,12 +45,6 @@ def handle_client(connection_socket, client_address):
             connected = False
             is_error = True
 
-        if not is_error and not is_correct_checksum(checksum, message_no_checksum):
-            # message was changed during transmission
-            print(client_address, email if email else '', 'Message received incorrectly', sep=':\t')
-            send_error_response(connection_socket, codes.MESSAGE_CORRUPTED)
-            is_error = True
-
         # parse message
         try:
             parsed_request = message_parser.parse_message(full_message)  # parse the message
@@ -67,6 +61,12 @@ def handle_client(connection_socket, client_address):
                 email = parsed_request[constants.PARAMETERS_KEY][constants.AUTH_EMAIL_KEY]
                 password = parsed_request[constants.PARAMETERS_KEY][constants.AUTH_PASSWORD_KEY]
                 response_string, content = AuthRequestHandler.response(email, password, database=database)
+
+                if not is_error and not is_correct_checksum(checksum, message_no_checksum, b''):
+                    # message was changed during transmission
+                    print(client_address, email if email else '', 'Message received incorrectly', sep=':\t')
+                    send_error_response(connection_socket, codes.MESSAGE_CORRUPTED)
+                    is_error = True
         except:
             # key probably doesn't exist
             # TODO: find exception name, and send appropriate response
@@ -103,6 +103,12 @@ def handle_client(connection_socket, client_address):
                 response_string, content = ListRequestHandler.response(email, access_key, database=database)
                 if is_error:
                     content = b''
+
+                if not is_error and not is_correct_checksum(checksum, message_no_checksum, b''):
+                    # message was changed during transmission
+                    print(client_address, email if email else '', 'Message received incorrectly', sep=':\t')
+                    send_error_response(connection_socket, codes.MESSAGE_CORRUPTED)
+                    is_error = True
         except FileNotFoundError:
             # key probably doesn't exist
             # TODO: find exception name, and send appropriate response
@@ -125,6 +131,12 @@ def handle_client(connection_socket, client_address):
                 response_string, content = UploadRequestHandler.response(full_message.decode(), file, database=database)
                 if is_error:
                     content = b''
+
+                if not is_error and not is_correct_checksum(checksum, message_no_checksum, file):
+                    # message was changed during transmission
+                    print(client_address, email if email else '', 'Message received incorrectly', sep=':\t')
+                    send_error_response(connection_socket, codes.MESSAGE_CORRUPTED)
+                    is_error = True
         except RuntimeError as e:
             print(client_address, email if email else '', 'User does not exist', sep=':\t')
             send_error_response(connection_socket, codes.USER_NOT_EXIST)
@@ -145,6 +157,11 @@ def handle_client(connection_socket, client_address):
                 response_string, content = DownloadRequestHandler.response(email, file_name, database=database)
                 if is_error:
                     content = b''
+                if not is_error and not is_correct_checksum(checksum, message_no_checksum, b''):
+                    # message was changed during transmission
+                    print(client_address, email if email else '', 'Message received incorrectly', sep=':\t')
+                    send_error_response(connection_socket, codes.MESSAGE_CORRUPTED)
+                    is_error = True
         except Exception as e:
             raise e
             # key probably doesn't exist
@@ -165,6 +182,13 @@ def handle_client(connection_socket, client_address):
                 connection_socket.send(content)
                 connection_socket.close()
                 connected = False
+
+                if not is_error and not is_correct_checksum(checksum, message_no_checksum, b''):
+                    # message was changed during transmission
+                    print(client_address, email if email else '', 'Message received incorrectly', sep=':\t')
+                    send_error_response(connection_socket, codes.MESSAGE_CORRUPTED)
+                    is_error = True
+
                 continue
         except:
             # key probably doesn't exist
