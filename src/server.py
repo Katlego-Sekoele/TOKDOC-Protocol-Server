@@ -242,6 +242,7 @@ def receive_message(connection_socket):
                                               :-2].encode(), message_size + message  # message that was sent
 
 
+# TODO: Change to generate checksums based on message + content
 def is_correct_checksum(checksum: bytes, message_no_checksum: bytes) -> bool:
     """
     compares the checksum provided to the server generated checksum
@@ -261,3 +262,4 @@ if __name__ == '__main__':
         database.disconnect()
     except KeyboardInterrupt:
         database.disconnect()
+        print('Server shutting down.')
