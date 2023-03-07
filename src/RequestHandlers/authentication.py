@@ -5,17 +5,16 @@ import hashlib
 import os
 from dotenv import load_dotenv
 from Utilities import codes, message_serializer
-from Utilities import database_manager as database
 
 
-def response(email: str, password: str) -> tuple:
+def response(email: str, password: str, database=None) -> tuple:
     """
     generates a response message to send back to the client
     :param email:
     :param password:
     :return: (response message, response data)
     """
-    authenticated = check_user(email, password)  # authenticate or register user result
+    authenticated = check_user(email, password, database=database)  # authenticate or register user result
     files_string = ''
     access_key = 'null'
 
@@ -31,7 +30,7 @@ def response(email: str, password: str) -> tuple:
 
 
 # register new
-def register_user(email, password):
+def register_user(email, password, database=None):
     """
     Registers a user. i.e. adds user information to the database
     :param email:
@@ -51,7 +50,7 @@ def register_user(email, password):
 
 
 # check member
-def check_user(email, password) -> bool:
+def check_user(email, password, database=None) -> bool:
     """
     :param email:
     :param password:
@@ -74,7 +73,7 @@ def check_user(email, password) -> bool:
             found = True
     else:
         # user not found, create user
-        found = register_user(email, password)
+        found = register_user(email, password, database=database)
 
     return found
 

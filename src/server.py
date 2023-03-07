@@ -1,7 +1,8 @@
 import hashlib
+import threading
 from socket import *
 import os
-from Utilities import database_manager as database
+from Utilities import database_manager
 from RequestHandlers import list as ListRequestHandler
 from RequestHandlers import authentication as AuthRequestHandler
 from RequestHandlers import upload as UploadRequestHandler
@@ -13,11 +14,171 @@ from Utilities import constants
 from Utilities import codes
 
 # Server constants
-BACKLOG = 16
+BACKLOG = 1
 PORT = 3000
 CHECKSUM_CRLF_LENGTH = 66
 MESSAGE_SIZE_CRLF_LENGTH = 18
 DEFAULT_BUFFER = 1024
+DEFAULT_TIMEOUT = 60
+
+def handle_client(connection_socket, client_address):
+    connected = True
+    database = database_manager.Database()
+    database.connect()
+    print('Connecting to:', client_address)
+
+    # while a client is connected
+    while connected:
+
+        response_string = ''
+        content = b''
+        is_error = False
+        email = None
+
+        # receive the message from the socket
+        try:
+            full_message, checksum, message_no_checksum = receive_message(connection_socket)
+        except (ValueError, OSError) as e:
+            # message not appropriately formatted
+            print(client_address, email if email else '', 'Error in message retrieval', sep=':\t')
+            send_error_response(connection_socket, codes.INTERNAL_SERVER_ERROR)
+            connected = False
+            is_error = True
+
+        if not is_error and not is_correct_checksum(checksum, message_no_checksum):
+            # message was changed during transmission
+            print(client_address, email if email else '', 'Message received incorrectly', sep=':\t')
+            send_error_response(connection_socket, codes.MESSAGE_CORRUPTED)
+            is_error = True
+
+        # parse message
+        try:
+            parsed_request = message_parser.parse_message(full_message)  # parse the message
+        except:
+            # message was incorrectly formatted
+            print(client_address, email if email else '', 'Message formatted incorrectly', sep=':\t')
+            send_error_response(connection_socket, codes.INVALID_FORMAT)
+            is_error = True
+
+        # public endpoint AUTH
+        try:
+            if not is_error and parsed_request[constants.PARAMETERS_KEY][constants.METHOD_KEY] == constants.AUTH:
+                print(client_address, email if email else '', parsed_request[constants.PARAMETERS_KEY][constants.METHOD_KEY], sep=':\t')
+                email = parsed_request[constants.PARAMETERS_KEY][constants.AUTH_EMAIL_KEY]
+                password = parsed_request[constants.PARAMETERS_KEY][constants.AUTH_PASSWORD_KEY]
+                response_string, content = AuthRequestHandler.response(email, password, database=database)
+        except:
+            # key probably doesn't exist
+            # TODO: find exception name, and send appropriate response
+            is_error = True
+            pass
+
+        # protected endpoints LIST, UPLOAD, DOWNLOAD
+        # Access key check
+        if not is_error:
+            method = parsed_request[constants.PARAMETERS_KEY][constants.METHOD_KEY]
+        if not is_error and method != constants.EXIT and method != constants.AUTH:
+            if constants.ACCESS_KEY not in parsed_request[constants.HEADERS]:
+                # access key was not provided
+                print(client_address, email if email else '', 'Missing access key', sep=':\t')
+                send_error_response(connection_socket, codes.ACCESS_DENIED)
+                is_error = True
+            elif constants.ACCESS_KEY in parsed_request[constants.HEADERS]:
+                access_key = parsed_request[constants.HEADERS][constants.ACCESS_KEY]
+                email = parsed_request[constants.HEADERS][constants.USER]
+                if AuthRequestHandler.generate_access_key_decoded(email) != access_key:
+                    # incorrect access key
+                    print(client_address, email if email else '', 'Incorrect access key', sep=':\t')
+                    send_error_response(connection_socket, codes.ACCESS_DENIED)
+                    is_error = True
+
+        # List Request
+        try:
+            if not is_error and parsed_request[constants.PARAMETERS_KEY][constants.METHOD_KEY] == constants.LIST:
+                print(client_address, email if email else '', parsed_request[constants.PARAMETERS_KEY][constants.METHOD_KEY], sep=':\t')
+                email = parsed_request[constants.HEADERS][constants.USER]
+                access_key = None
+                if not is_error:
+                    access_key = parsed_request[constants.HEADERS][constants.ACCESS_KEY]
+                response_string, content = ListRequestHandler.response(email, access_key, database=database)
+                if is_error:
+                    content = b''
+        except FileNotFoundError:
+            # key probably doesn't exist
+            # TODO: find exception name, and send appropriate response
+            is_error = True
+            pass
+
+        # Upload Request
+        try:
+            if not is_error and (
+                    parsed_request[constants.PARAMETERS_KEY][constants.METHOD_KEY] == constants.UPLOAD) and \
+                    (parsed_request[constants.FILE_SIZE_KEY] > 0):
+                print(client_address, email if email else '', parsed_request[constants.PARAMETERS_KEY][constants.METHOD_KEY], sep=':\t')
+                file = b''
+
+                while len(file) < parsed_request[constants.FILE_SIZE_KEY]:
+                    file += connection_socket.recv(DEFAULT_BUFFER)
+
+                # email = parsed_request[constants.HEADERS][constants.USER]
+                # access_key = parsed_request[constants.HEADERS][constants.ACCESS_KEY]
+                response_string, content = UploadRequestHandler.response(full_message.decode(), file, database=database)
+                if is_error:
+                    content = b''
+        except RuntimeError as e:
+            print(client_address, email if email else '', 'User does not exist', sep=':\t')
+            send_error_response(connection_socket, codes.USER_NOT_EXIST)
+            is_error = True
+        except Exception as e:
+            raise e
+            # key probably doesn't exist
+            # TODO: find exception name, and send appropriate response
+            pass
+
+        # Download Request
+        try:
+            if not is_error and parsed_request[constants.PARAMETERS_KEY][
+                constants.METHOD_KEY] == constants.DOWNLOAD:
+                print(client_address, email if email else '', parsed_request[constants.PARAMETERS_KEY][constants.METHOD_KEY], sep=':\t')
+                email = parsed_request[constants.HEADERS][constants.USER]
+                file_name = parsed_request[constants.PARAMETERS_KEY]['file_name']
+                response_string, content = DownloadRequestHandler.response(email, file_name, database=database)
+                if is_error:
+                    content = b''
+        except Exception as e:
+            raise e
+            # key probably doesn't exist
+            # TODO: find exception name, and send appropriate response
+            pass
+
+        # Exit Request
+        try:
+            if not is_error and \
+                    parsed_request[constants.PARAMETERS_KEY][
+                        constants.METHOD_KEY] == constants.EXIT and not is_error:
+                print(client_address, email if email else '', parsed_request[constants.PARAMETERS_KEY][constants.METHOD_KEY], sep=':\t')
+                response_string, content = ExitRequestHandler.response()
+                print('Disconnecting from:', client_address)
+                response_string = cast_bytes(response_string)
+                content = cast_bytes(content)
+                connection_socket.send(response_string)
+                connection_socket.send(content)
+                connection_socket.close()
+                connected = False
+                continue
+        except:
+            # key probably doesn't exist
+            # TODO: find exception name, and send appropriate response
+            pass
+
+        # send response
+        if not is_error:
+            response_string = cast_bytes(response_string)
+            content = cast_bytes(content)
+            connection_socket.send(response_string)
+            connection_socket.send(content)
+    else:
+        database.disconnect()
 
 
 def send_error_response(connection_socket: socket, code: codes.Status):
@@ -75,157 +236,8 @@ def launch():
     while True:
         # accept queued connection
         connection_socket, client_address = server_socket.accept()
-        connected = True
-        print('Connecting to:', client_address)
-
-        # while a client is connected
-        while connected:
-
-            response_string = ''
-            content = b''
-            is_error = False
-
-            # receive the message from the socket
-            try:
-                full_message, checksum, message_no_checksum = receive_message(connection_socket)
-            except (ValueError, OSError) as e:
-                # message not appropriately formatted
-                print(client_address, 'Error in message retrieval', sep=':\t')
-                send_error_response(connection_socket, codes.INTERNAL_SERVER_ERROR)
-                connected = False
-                is_error = True
-
-            if not is_error and not is_correct_checksum(checksum, message_no_checksum):
-                # message was changed during transmission
-                print(client_address, 'Message received incorrectly', sep=':\t')
-                send_error_response(connection_socket, codes.MESSAGE_CORRUPTED)
-                is_error = True
-
-            # parse message
-            try:
-                parsed_request = message_parser.parse_message(full_message)  # parse the message
-            except:
-                # message was incorrectly formatted
-                print(client_address, 'Message formatted incorrectly', sep=':\t')
-                send_error_response(connection_socket, codes.INVALID_FORMAT)
-                is_error = True
-
-            # public endpoint AUTH
-            try:
-                if not is_error and parsed_request[constants.PARAMETERS_KEY][constants.METHOD_KEY] == constants.AUTH:
-                    print(client_address, parsed_request[constants.PARAMETERS_KEY][constants.METHOD_KEY], sep=':\t')
-                    email = parsed_request[constants.PARAMETERS_KEY][constants.AUTH_EMAIL_KEY]
-                    password = parsed_request[constants.PARAMETERS_KEY][constants.AUTH_PASSWORD_KEY]
-                    response_string, content = AuthRequestHandler.response(email, password)
-            except:
-                # key probably doesn't exist
-                # TODO: find exception name, and send appropriate response
-                is_error = True
-                pass
-
-            # protected endpoints LIST, UPLOAD, DOWNLOAD
-            # Access key check
-            if not is_error:
-                method = parsed_request[constants.PARAMETERS_KEY][constants.METHOD_KEY]
-            if not is_error and method != constants.EXIT and method != constants.AUTH:
-                if constants.ACCESS_KEY not in parsed_request[constants.HEADERS]:
-                    # access key was not provided
-                    print(client_address, 'Missing access key', sep=':\t')
-                    send_error_response(connection_socket, codes.ACCESS_DENIED)
-                    is_error = True
-                elif constants.ACCESS_KEY in parsed_request[constants.HEADERS]:
-                    access_key = parsed_request[constants.HEADERS][constants.ACCESS_KEY]
-                    email = parsed_request[constants.HEADERS][constants.USER]
-                    if AuthRequestHandler.generate_access_key_decoded(email) != access_key:
-                        # incorrect access key
-                        print(client_address, 'Incorrect access key', sep=':\t')
-                        send_error_response(connection_socket, codes.ACCESS_DENIED)
-                        is_error = True
-
-            # List Request
-            try:
-                if not is_error and parsed_request[constants.PARAMETERS_KEY][constants.METHOD_KEY] == constants.LIST:
-                    print(client_address, parsed_request[constants.PARAMETERS_KEY][constants.METHOD_KEY], sep=':\t')
-                    email = parsed_request[constants.HEADERS][constants.USER]
-                    access_key = None
-                    if not is_error:
-                        access_key = parsed_request[constants.HEADERS][constants.ACCESS_KEY]
-                    response_string, content = ListRequestHandler.response(email, access_key)
-                    if is_error:
-                        content = b''
-            except FileNotFoundError:
-                # key probably doesn't exist
-                # TODO: find exception name, and send appropriate response
-                is_error = True
-                pass
-
-            # Upload Request
-            try:
-                if not is_error and (
-                        parsed_request[constants.PARAMETERS_KEY][constants.METHOD_KEY] == constants.UPLOAD) and \
-                        (parsed_request[constants.FILE_SIZE_KEY] > 0):
-
-                    file = b''
-
-                    while len(file) < parsed_request[constants.FILE_SIZE_KEY]:
-                        file += connection_socket.recv(DEFAULT_BUFFER)
-
-                    # email = parsed_request[constants.HEADERS][constants.USER]
-                    # access_key = parsed_request[constants.HEADERS][constants.ACCESS_KEY]
-                    response_string, content = UploadRequestHandler.response(full_message.decode(), file)
-                    if is_error:
-                        content = b''
-            except RuntimeError as e:
-                print(client_address, 'User does not exist', sep=':\t')
-                send_error_response(connection_socket, codes.USER_NOT_EXIST)
-                is_error = True
-            except Exception as e:
-                raise e
-                # key probably doesn't exist
-                # TODO: find exception name, and send appropriate response
-                pass
-
-            # Download Request
-            try:
-                if not is_error and parsed_request[constants.PARAMETERS_KEY][
-                    constants.METHOD_KEY] == constants.DOWNLOAD:
-                    print(client_address, parsed_request[constants.PARAMETERS_KEY][constants.METHOD_KEY], sep=':\t')
-                    email = parsed_request[constants.HEADERS][constants.USER]
-                    file_name = parsed_request[constants.PARAMETERS_KEY]['file_name']
-                    response_string, content = DownloadRequestHandler.response(email, file_name)
-                    if is_error:
-                        content = b''
-            except Exception as e:
-                raise e
-                # key probably doesn't exist
-                # TODO: find exception name, and send appropriate response
-                pass
-
-            # Exit Request
-            try:
-                if not is_error and \
-                        parsed_request[constants.PARAMETERS_KEY][
-                            constants.METHOD_KEY] == constants.EXIT and not is_error:
-                    response_string, content = ExitRequestHandler.response()
-                    print('Disconnecting from:', client_address)
-                    response_string = cast_bytes(response_string)
-                    content = cast_bytes(content)
-                    connection_socket.send(response_string)
-                    connection_socket.send(content)
-                    connection_socket.close()
-                    connected = False
-                    continue
-            except:
-                # key probably doesn't exist
-                # TODO: find exception name, and send appropriate response
-                pass
-
-            # send response
-            if not is_error:
-                response_string = cast_bytes(response_string)
-                content = cast_bytes(content)
-                connection_socket.send(response_string)
-                connection_socket.send(content)
+        connection_socket.settimeout(DEFAULT_TIMEOUT)
+        threading.Thread(target=handle_client, args=(connection_socket, client_address)).start()
 
 
 def receive_message(connection_socket):
@@ -256,8 +268,10 @@ def is_correct_checksum(checksum: bytes, message_no_checksum: bytes) -> bool:
 
 if __name__ == '__main__':
     try:
-        database.connect()
+        # database.connect()
         launch()
-        database.disconnect()
+        # database.disconnect()
     except KeyboardInterrupt:
-        database.disconnect()
+        print('Server terminating')
+        pass
+        # database.disconnect()

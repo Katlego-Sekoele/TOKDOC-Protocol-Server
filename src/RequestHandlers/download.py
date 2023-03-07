@@ -5,11 +5,10 @@ from the server to the client
 """
 import os
 from Utilities import codes
-from Utilities import database_manager as database
 from Utilities import message_serializer as m_builder
 
 
-def response(email, filename):
+def response(email, filename, database=None):
     """
     generates a response message to send back to the client
     :param filename:
@@ -21,9 +20,9 @@ def response(email, filename):
     code = codes.SUCCESS
     file_size = 0
 
-    if not valid_filename(filename):
+    if not valid_filename(filename, database=database):
         code = codes.FILE_NOT_FOUND
-    elif not is_public(filename) and not has_access(filename, email):
+    elif not is_public(filename, database=database) and not has_access(filename, email, database=database):
         code = codes.ACCESS_DENIED
     else:
         file_bytes, file_size = send(filename)
@@ -33,7 +32,7 @@ def response(email, filename):
 
 
 # checks if file name entered is valid
-def valid_filename(filename):
+def valid_filename(filename, database=None):
     """
     Validate that the file exists in the database
     :param filename:
@@ -52,7 +51,7 @@ def valid_filename(filename):
 
 
 # this method works when valid_filename is true
-def is_public(filename):
+def is_public(filename, database=None):
     """
     :param filename:
     :return: True if the file is public
@@ -67,7 +66,7 @@ def is_public(filename):
 
 
 # checks if an access ID exists for the client
-def has_access(filename, email):
+def has_access(filename, email, database=None):
     """
 
     :param filename:

@@ -3,18 +3,17 @@ listing all the available files
 functions to handle the listing of accessible files
 """
 from Utilities import codes
-from Utilities import database_manager as database
 from Utilities import message_serializer as message_serializer
 
 
-def response(email: str, access_key=None) -> tuple:
+def response(email: str, access_key=None, database=None) -> tuple:
     """
     generates a response message to send back to the client
     :param email:
     :param access_key:
     :return: (response message, list of files)
     """
-    files = return_list(email)
+    files = return_list(email, database=database)
     files_string = ''
     for file in files:
         files_string += file['resource_path'] + '\r\n'
@@ -29,7 +28,7 @@ def response(email: str, access_key=None) -> tuple:
     return response_string, files_string.strip('\r\n')
 
 
-def is_public(filename):
+def is_public(filename, database=None):
     """
 
     :param filename:
@@ -44,7 +43,7 @@ def is_public(filename):
     return public
 
 
-def has_access(filename, email):
+def has_access(filename, email, database=None):
     """
 
     :param filename:
@@ -69,7 +68,7 @@ def has_access(filename, email):
     return access
 
 
-def return_list(email) -> list[dict]:
+def return_list(email, database=None) -> list[dict]:
     """
     A method that will return a list of files that are public or that the user owns
     :param
@@ -102,7 +101,7 @@ def return_list(email) -> list[dict]:
     for row in rows:
         row['public'] = row['public'] == 1
         filename = row['resource_path']
-        if row not in list_to_return and (is_public(filename) or has_access(filename, email)):
+        if row not in list_to_return and (is_public(filename, database) or has_access(filename, email, database)):
             list_to_return.append(row)
 
     return list_to_return

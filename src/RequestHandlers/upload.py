@@ -5,14 +5,13 @@ from the client to the server
 """
 from datetime import *
 from Utilities import message_serializer
-from Utilities import database_manager as database
 from Utilities import message_parser as m_breaker
 from Utilities import constants
 from Utilities import codes
 import os
 
 
-def response(message: str, file: bytes, access_key=None) -> tuple:
+def response(message: str, file: bytes, access_key=None, database=None) -> tuple:
     """
     generates a response message to send back to the client
     :param message:
@@ -22,7 +21,7 @@ def response(message: str, file: bytes, access_key=None) -> tuple:
     """
     files_string = ''
 
-    save_file(message, file)
+    save_file(message, file, database)
 
     code = codes.SUCCESS
 
@@ -30,7 +29,7 @@ def response(message: str, file: bytes, access_key=None) -> tuple:
     return response_string, files_string.strip('\r\n')
 
 
-def save_file(message, file_bytes):
+def save_file(message, file_bytes, database=None):
     """
     saves the file to the server and calls to save the file to the database
     :param message:
@@ -52,10 +51,10 @@ def save_file(message, file_bytes):
     file = open(file_name, 'wb')
     file.write(file_bytes)
     file.close()
-    save_filename_to_db(file_name, email, authorized)
+    save_filename_to_db(file_name, email, authorized, database)
 
 
-def save_filename_to_db(filename, owner_email, authorized=None):
+def save_filename_to_db(filename, owner_email, authorized=None, database=None):
     """
     Performs appropriate queries to keep track of this file
     and user that can access it
@@ -66,7 +65,7 @@ def save_filename_to_db(filename, owner_email, authorized=None):
     """
     throwaway, file_type = os.path.splitext(filename)
 
-    user_id = get_user_id(owner_email)
+    user_id = get_user_id(owner_email, database=database)
 
     command = 'INSERT INTO Resources (type, resource_path, upload_date, user_id, public) VALUES (%s, %s, %s, %s, %s)'
     cred = (file_type, filename, datetime.now(), user_id, authorized is None)
@@ -79,14 +78,14 @@ def save_filename_to_db(filename, owner_email, authorized=None):
         file_id = database.query(file_command, file_params)[0]['resource_id']
 
         for email in authorized:
-            access_user_id = get_user_id(email)
+            access_user_id = get_user_id(email, database=database)
             access_query = 'INSERT INTO Access (user_id, file_id) VALUES (%s, %s)'
             access_params = (access_user_id, file_id)
             access_result = database.query(access_query, access_params)
             database.commit()
 
 
-def get_user_id(email: str):
+def get_user_id(email: str, database=None):
     """
     returns the user's id given their email
     :param email:
