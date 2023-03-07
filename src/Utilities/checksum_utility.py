@@ -12,10 +12,15 @@ def get_checksum(message) -> str:
     return message[:constants.CHECKSUM_LENGTH]
 
 
-def generate_checksum(message) -> str:
+def generate_checksum(message, content: bytes = None) -> str:
     """
+    :param content:
     :param message:
     :return: str -> a sha256 checksum of the given message
     """
     message = get_message_string(message)
-    return hashlib.sha256(message.encode()).hexdigest()
+    if content is None or len(content) == 0:
+        return hashlib.sha256(message.encode()).hexdigest()
+    else:
+        return hashlib.sha256(message.encode()+content).hexdigest()
+

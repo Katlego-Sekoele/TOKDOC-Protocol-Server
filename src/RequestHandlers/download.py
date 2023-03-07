@@ -27,7 +27,7 @@ def response(email, filename, database=None):
     else:
         file_bytes, file_size = send(filename)
 
-    response_string = m_builder.build_response_string(code, file_size=file_size)
+    response_string = m_builder.build_response_string(code, file_size=file_size, content=file_bytes)
     return response_string, file_bytes
 
 

@@ -25,7 +25,7 @@ def response(email: str, password: str, database=None) -> tuple:
     else:
         code = codes.INCORRECT_CREDENTIALS
 
-    response_string = message_serializer.build_response_string(code, access_key=access_key)
+    response_string = message_serializer.build_response_string(code, access_key=access_key, content=b'')
     return response_string, files_string.strip('\r\n')
 
 

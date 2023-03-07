@@ -25,7 +25,7 @@ def response(message: str, file: bytes, access_key=None, database=None) -> tuple
 
     code = codes.SUCCESS
 
-    response_string = message_serializer.build_response_string(code, file_size=0)
+    response_string = message_serializer.build_response_string(code, file_size=0, content=b'')
     return response_string, files_string.strip('\r\n')
 
 

@@ -9,5 +9,5 @@ def response() -> tuple:
     generates a response message for the exit request
     :return:
     """
-    response_string = message_serializer.build_response_string(codes.SUCCESS, file_size=0)
+    response_string = message_serializer.build_response_string(codes.SUCCESS, file_size=0, content=b'')
     return response_string, ''

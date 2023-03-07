@@ -187,7 +187,7 @@ def send_error_response(connection_socket: socket, code: codes.Status):
     :param code: Status
     :param connection_socket: socket
     """
-    response_string = message_serializer.build_response_string(code, file_size=0)
+    response_string = message_serializer.build_response_string(code, file_size=0, content=b'')
     response_string = cast_bytes(response_string)
     content = cast_bytes('')
     try:
@@ -254,15 +254,21 @@ def receive_message(connection_socket):
                                               :-2].encode(), message_size + message  # message that was sent
 
 
-def is_correct_checksum(checksum: bytes, message_no_checksum: bytes) -> bool:
+def is_correct_checksum(checksum: bytes, message_no_checksum: bytes, content: bytes = None) -> bool:
     """
     compares the checksum provided to the server generated checksum
+    :param content:
     :param checksum:
     :param message_no_checksum:
     :return: true if checksums are the same
     """
     decoded_checksum = checksum.decode()
-    generated_checksum = hashlib.sha256(message_no_checksum).hexdigest()
+    if content is None or len(content) == 0:
+        generated_checksum = hashlib.sha256(message_no_checksum).hexdigest()
+    else:
+        # updated hash
+        generated_checksum = hashlib.sha256(message_no_checksum + content).hexdigest()
+
     return decoded_checksum == generated_checksum
 
 

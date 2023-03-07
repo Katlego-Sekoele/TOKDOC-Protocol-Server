@@ -6,7 +6,7 @@ from Utilities.checksum_utility import generate_checksum
 from Utilities.constants import *
 
 
-def build_response_string(status: Status, access_key=None, file_size: int = None) -> str:
+def build_response_string(status: Status, access_key=None, file_size: int = None, content: bytes = None) -> str:
     """
     :param file_size:
     :param status: codes.Status object
@@ -38,16 +38,5 @@ def build_response_string(status: Status, access_key=None, file_size: int = None
     message = (str(message_size) + (MESSAGE_SIZE_LENGTH - len(str(message_size))) * " " +
                CRLF + message)
 
-    checksum = generate_checksum(message)
+    checksum = generate_checksum(message, content=content)
     return checksum + CRLF + message
-
-
-def build_response_bytes(status_code: Status, access_key=None, file_size: int = None) -> bytes:
-    """
-    Encodes the build_response_string() return value
-    :param file_size:
-    :param status_code:
-    :param access_key:
-    :return: bytes
-    """
-    return build_response_string(status_code, access_key, file_size).encode()
