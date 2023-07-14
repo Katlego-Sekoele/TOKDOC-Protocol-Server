@@ -6,8 +6,6 @@
 | Owethu Novuka | NVKOWE001 |
 | Maesela Sekoele | SKLMAE001 |
 
-# Table of Contents
-
 # Introduction
 
 A protocol can simply be described as a set of defined rules governing the interactions between two network nodes. The TCP/IP suite specifies 5 layers of protocols with different responsibilities. Every layer will have its own protocols that service the layer below it.
