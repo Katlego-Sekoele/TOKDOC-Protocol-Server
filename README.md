@@ -1,4 +1,4 @@
-# CSC3002F Networks Assignment 1 → Creating a Client-Server Application Implementing a Custom Application Layer Protocol
+# Creating a Client-Server Application Implementing a Custom Application Layer Protocol
 
 | Name | Student Number |
 | --- | --- |
