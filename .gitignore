@@ -145,3 +145,7 @@ cython_debug/
 *.iml
 out
 gen
+
+# Environment
+.env
+credentials_planetscale
