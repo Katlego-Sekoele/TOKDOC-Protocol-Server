@@ -1,4 +1,114 @@
-# Creating a Client-Server Application Implementing a Custom Application Layer Protocol
+# Setting Up and Running a Pipenv Project
+
+This README provides instructions for setting up and running a Python project using Pipenv, a tool for managing Python environments and dependencies.
+
+## Prerequisites
+
+Before you begin, ensure that you have the following installed on your system:
+
+- Python (3.5 or later)
+- Pipenv (if not installed, you can install it using `pip install pipenv`)
+
+## Clone the Repository
+
+Clone the project repository to your local machine using Git. Replace `<repository_url>` with the actual URL of your project repository.
+
+```bash
+git clone <repository_url>
+```
+
+## Navigate to the Project Directory
+
+Change your working directory to the root folder of the project.
+
+```bash
+cd <project_directory>
+```
+
+## Create a Virtual Environment and Install Dependencies
+
+Pipenv uses virtual environments to isolate project dependencies. To create a new virtual environment and install the project dependencies specified in the Pipfile, run the following command:
+
+```bash
+pipenv install
+```
+
+This will create a virtual environment for your project and install the necessary packages.
+
+## .env File Configuration
+
+In the root directory of your project, create a file named `.env`. This file should contain one key-value pair in the format `PORT=desired_port_number`. Replace `desired_port_number` with the port number you want your application to use. This environment variable can be used in your code to configure the application's port.
+
+Example .env file:
+
+```env
+PORT=8080
+```
+
+## Activate the Virtual Environment
+
+To activate the virtual environment, use the following command:
+
+```bash
+pipenv shell
+```
+
+You should now see your command prompt change to indicate that you are in the virtual environment.
+
+## Running the Project
+
+You can now run your Python project within the virtual environment. Typically, you would run your project using the command specified in your project's Pipfile.
+
+For example, if your Pipfile specifies a `main.py` script as the entry point for your project, you can run it as follows:
+
+```bash
+python main.py
+```
+
+Make sure to refer to your project's documentation or Pipfile to determine the correct command for running your specific project.
+
+## Deactivate the Virtual Environment
+
+When you're done working on your project, you can deactivate the virtual environment by simply running:
+
+```bash
+exit
+```
+
+This will return you to your system's global Python environment.
+
+## Managing Dependencies
+
+To add or remove dependencies for your project, you can use the following Pipenv commands:
+
+- To install a new package: 
+  ```bash
+  pipenv install <package_name>
+  ```
+
+- To uninstall a package:
+  ```bash
+  pipenv uninstall <package_name>
+  ```
+
+- To update all packages to their latest versions:
+  ```bash
+  pipenv update
+  ```
+
+- To generate a `Pipfile.lock` file with specific versions (for production):
+  ```bash
+  pipenv lock
+  ```
+
+- To generate a `requirements.txt` file (useful for deployment):
+  ```bash
+  pipenv lock -r
+  ```
+
+For more information on using Pipenv, please refer to the [official documentation](https://pipenv.pypa.io/en/latest/).
+
+# Write-Up: Creating a Client-Server Application Implementing a Custom Application Layer Protocol
 
 | Name | Student Number |
 | --- | --- |
